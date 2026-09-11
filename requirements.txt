@@ -1,0 +1,12 @@
+fastapi>=0.115,<1
+uvicorn>=0.34,<1
+pandas>=2.2,<4
+duckdb>=1.2,<2
+SQLAlchemy>=2.0,<3
+sqlglot>=26,<31
+httpx[socks]>=0.28,<1
+cryptography>=44,<49
+python-multipart>=0.0.20,<1
+psycopg[binary]>=3.2,<4
+PyMySQL>=1.1,<2
+pytest>=8,<10
