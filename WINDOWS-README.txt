@@ -1,26 +1,22 @@
-知数 Data Agent · Windows 免安装版 1.1
+知数 Zhishu — Windows x64
 
-1. 将整个 ZIP 解压到你喜欢的文件夹（不要直接在压缩包内运行）。
-2. 双击 Zhishu.exe，稍等片刻，浏览器会自动打开分析网页。
-3. 启动中心可以最小化。使用完点击“退出知数”；下次再双击即可。
-4. 无需安装 Python、Node.js，也不用打开命令行。不要只复制 exe，旁边的 _internal 文件夹必须保留。
+简体中文
+完整解压后双击 Zhishu.exe，浏览器会打开本地界面，无需安装 Python 或 Node.js。
+保留启动中心，可最小化；结束时点击“退出知数”。
+默认规则演示。模型设置可启用 AI；DeepSeek 只需自己的 API Key。
+右上角切换简体中文 / English，偏好会保留。
+数据：%LOCALAPPDATA%\ZhishuDataAgent\storage。升级前退出并备份整个目录。
+分享原始安装包，不要分享个人数据目录。
 
-启用 AI：
-点“模型设置” → “AI 分析” → DeepSeek → 粘贴自己的 API Key → “验证并启用”。
-无需填写网址和模型名，Key 只填一次。默认规则演示不需要 Key。
-当前预设使用 DeepSeek 官方接口和 deepseek-v4-flash；AI 使用需联网，并由你自己的 API 账户承担用量费用。
+English
+Extract all files and double-click Zhishu.exe. A local browser workspace opens.
+No Python or Node.js installation required. Keep the launch center open or minimized;
+select Quit Zhishu when finished. Demo mode is the default. Enable AI in Model settings;
+DeepSeek needs only your API key. Language selection at the top right persists.
+Storage: %LOCALAPPDATA%\ZhishuDataAgent\storage. Quit and back it up before updating.
+Share the original package, not personal storage.
 
-你的数据：
-默认保存在 %LOCALAPPDATA%\ZhishuDataAgent\storage，升级软件不影响此目录。
-每个 Windows 用户使用自己的数据和 Key。本安装包不包含制作者的 Key、历史分析或导入数据。
-API Key 和数据库密码在本机加密保存。备份时需完整保护 storage 文件夹（包括 local.key）。
-AI 会将问题、表结构、最近对话及最多 30 行查询结果发送给配置的模型服务。
-这不是完全离线 AI，敏感数据请先确认是否允许发送到模型服务。
-
-分享：
-把原始 Zhishu-Windows-x64.zip 发给别人，对方解压并双击即可。
-网址里的 127.0.0.1 指“当前这台电脑”，不是公开网址，不能把它发给别人远程使用。
-若想所有人只打开一个公网网址，需要另行部署服务并增加登录、权限和数据隔离。
-
-系统：Windows x64。本版本在 Windows 上打包并自检，未在所有 Windows 版本实机验证。
-这是未签名的自制程序，部分电脑可能显示来源提醒；仅运行你确认来自可信来源的文件，不要关闭安全软件。
+Documentation / 文档: https://github.com/Runc3m/zhishu-data-agent
+Downloads / 下载: https://github.com/Runc3m/zhishu-data-agent/releases
+License / 许可: MIT for original code; see LICENSE and licenses/ for dependencies.
+Remote AI uses the selected provider and may incur API fees. / 远程 AI 使用所选服务，可能产生 API 费用。
