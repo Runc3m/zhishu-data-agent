@@ -71,6 +71,16 @@
   "当前是本机单用户工作台。给别人用请分享免安装 ZIP，对方填写自己的 Key；127.0.0.1 不是公网网址。": "Zhishu is a local, single-user workspace. Each user runs their own copy with their own model credentials.",
   "开始分析": "Start analyzing", "关闭提示": "Dismiss notification",
   "语言保存失败": "Could not save language preference",
+  "业务说明": "Business notes", "字段解释": "Column descriptions", "指标定义": "Metric definitions", "关联关系": "Relationships",
+  "业务上下文": "Business context", "保存业务说明": "Save business context", "业务说明已保存": "Business context saved",
+  "当前版本：{0}": "Current version: {0}", "尚未配置": "Not configured", "正在保存…": "Saving…", "正在读取业务说明…": "Loading business context…",
+  "业务说明读写失败，请检查内容后重试。": "Could not load or save context. Check the content and retry.",
+  "本次使用业务上下文 v{0}": "Business context v{0} used for this analysis",
+  "说明数据覆盖范围、使用约定和需要排除的记录。": "Describe coverage, usage conventions and records to exclude.",
+  "每行说明一个字段：表名.字段、显示名称、含义、单位和常见取值。": "One field per line: table.column, display name, meaning, unit and common values.",
+  "写明指标名称、计算公式、筛选条件和时间口径；不要只写简称。": "Include metric names, formulas, filters and date definitions, not just abbreviations.",
+  "说明当前数据源内的关联字段，以及一对一或一对多关系，避免重复计数。": "Describe join columns and one-to-one or one-to-many relationships within this source to avoid double counting.",
+  "这些说明由你确认后保存，AI 规划和修正查询时会引用。规则演示不使用业务说明；已有分析保留原版本。": "Save definitions you have confirmed. AI planning and repairs use them; demo mode does not. Existing analyses retain their original context version.",
   "CSV 导入 · 表名 data": "CSV import · Table: data", "数据库只读连接": "Read-only database connection",
   "销售演示数据": "Sample sales data", "模拟数据 · 2026 年 1–8 月 · 非真实经营数据": "Sample data · Jan–Aug 2026 · Not real business records"
 }

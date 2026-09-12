@@ -72,6 +72,10 @@ def main():
                 english = next(e['result'] for e in parsed if e['type'] == 'result')
                 assert english['language'] == 'en-US' and english['row_count'] == 8
                 assert '## Question' in client.get(url + f'/api/conversations/{cid}/export').text
+                if version != '1.0.0':
+                    context = client.put(url + f'/api/sources/{sid}/context', json={'notes': 'Synthetic package verification', 'metrics': 'total = sum(revenue)'}).json()
+                    assert context['version'] == 1
+                    assert client.get(url + f'/api/sources/{sid}/context').json() == context
                 second = subprocess.run(command, creationflags=subprocess.CREATE_NO_WINDOW, timeout=15)
                 assert second.returncode == 0 and process.poll() is None
                 print('Packaged EXE: startup, port conflict, frontend, clean defaults, SQL, chart, CSV, export, single-instance PASS')

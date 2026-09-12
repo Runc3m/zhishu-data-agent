@@ -9,8 +9,8 @@ Original Zhishu code is MIT licensed. Dependencies retain their own terms; the p
 | React, Vite, Lucide | MIT |
 | TypeScript, Apache ECharts | Apache-2.0 |
 | zrender, pandas, NumPy | BSD-3-Clause and bundled notices |
-| FastAPI, Starlette, HTTPX, SQLAlchemy, SQLGlot, DuckDB, PyMySQL | MIT |
-| Uvicorn | BSD-3-Clause |
+| FastAPI, SQLAlchemy, SQLGlot, DuckDB, PyMySQL | MIT |
+| Starlette, HTTPX, Uvicorn | BSD-3-Clause |
 | cryptography | Apache-2.0 OR BSD-3-Clause and bundled notices |
 | psycopg / psycopg-binary | LGPL-3.0-or-later and bundled notices |
 | Python, Tcl/Tk | PSF and bundled Tcl/Tk notices |
