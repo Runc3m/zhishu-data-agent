@@ -109,10 +109,13 @@ def test_ai_language_rule_and_override(client, monkeypatch):
 def test_frontend_catalog_and_version():
     root = Path(__file__).resolve().parents[1]
     catalog = json.loads((root / 'frontend/src/locales/en.json').read_text(encoding='utf-8'))
-    source = (root / 'frontend/src/main.tsx').read_text(encoding='utf-8')
+    source = '\n'.join(path.read_text(encoding='utf-8') for path in (root / 'frontend/src').glob('*.tsx'))
     for literal in re.findall(r'\bt\(("(?:[^"\\]|\\.)*")', source):
         key = json.loads(literal)
         assert key in catalog, key
+    business = (root / 'frontend/src/BusinessContext.tsx').read_text(encoding='utf-8')
+    for key in re.findall(r"(?:label|hint): '([^']+)'", business):
+        assert key in catalog
     for key, value in catalog.items():
         assert sorted(re.findall(r'\{\d+\}', key)) == sorted(re.findall(r'\{\d+\}', value)), key
     assert json.loads((root / 'frontend/package.json').read_text())['version'] == VERSION
