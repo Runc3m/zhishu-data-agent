@@ -16,3 +16,10 @@
 .language-select { width: auto; min-width: 106px; padding: 7px 9px; border: 1px solid #dfe8e5; border-radius: 7px; background: white; color: #405b55; font: inherit; }
 html[lang="en-US"] .top-actions { flex-wrap: wrap; }
 html[lang="en-US"] .nav-item { white-space: normal; }
+.business-context-form fieldset { border:0; padding:0; margin:0; min-width:0; }
+.business-context-form textarea { width:100%; box-sizing:border-box; resize:vertical; padding:10px 12px; border:1px solid #dfe8e5; border-radius:7px; color:#274742; font:inherit; line-height:1.6; }
+.context-version { color:#687d78; font-size:.8rem; }
+.context-reference { margin:14px 0; font-size:.8rem; color:#55756b; }
+.context-reference summary { cursor:pointer; }
+.context-reference p { white-space:pre-wrap; overflow-wrap:anywhere; line-height:1.6; }
+.context-reference h4 { margin-bottom:6px; }

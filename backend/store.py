@@ -40,6 +40,9 @@ class Store:
             CREATE TABLE IF NOT EXISTS sources (id TEXT PRIMARY KEY, payload TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS settings (id INTEGER PRIMARY KEY, payload TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS preferences (id INTEGER PRIMARY KEY, language TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS business_contexts (
+                source_id TEXT PRIMARY KEY, version INTEGER NOT NULL,
+                payload TEXT NOT NULL, updated_at TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS conversations (
                 id TEXT PRIMARY KEY, title TEXT NOT NULL, source_id TEXT NOT NULL,
                 created_at TEXT NOT NULL, updated_at TEXT NOT NULL);
@@ -76,6 +79,25 @@ class Store:
 
     def decrypt(self, value):
         return self.cipher.decrypt(value.encode()).decode() if value else ''
+
+    def business_context(self, source_id):
+        self.source(source_id)
+        with self.connect() as c:
+            row = c.execute('SELECT * FROM business_contexts WHERE source_id=?', (source_id,)).fetchone()
+        if not row:
+            return {'version': 0, 'updated_at': None, 'notes': '', 'fields': '', 'metrics': '', 'relationships': ''}
+        return {**json.loads(row['payload']), 'version': row['version'], 'updated_at': row['updated_at']}
+
+    def save_business_context(self, source_id, data):
+        self.source(source_id)
+        payload = json.dumps({key: data.get(key, '').strip() for key in ('notes', 'fields', 'metrics', 'relationships')}, ensure_ascii=False, sort_keys=True)
+        with self.connect() as c:
+            c.execute('BEGIN IMMEDIATE')
+            old = c.execute('SELECT version, payload FROM business_contexts WHERE source_id=?', (source_id,)).fetchone()
+            if not old or old['payload'] != payload:
+                version = old['version'] + 1 if old else 1
+                c.execute('INSERT OR REPLACE INTO business_contexts VALUES (?,?,?,?)', (source_id, version, payload, now()))
+        return self.business_context(source_id)
 
     def settings(self, private=False):
         with self.connect() as c:

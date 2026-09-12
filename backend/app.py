@@ -87,6 +87,13 @@ class PreferencesInput(BaseModel):
     language: Literal['zh-CN', 'en-US']
 
 
+class BusinessContextInput(BaseModel):
+    notes: str = Field(default='', max_length=8000)
+    fields: str = Field(default='', max_length=8000)
+    metrics: str = Field(default='', max_length=8000)
+    relationships: str = Field(default='', max_length=8000)
+
+
 def create_app(storage_path=None):
     store = Store(Path(storage_path or os.environ.get('DATA_AGENT_STORAGE', ROOT / 'storage')))
     engines = Engines(store)
@@ -201,6 +208,14 @@ def create_app(storage_path=None):
         except Exception as e:
             raise ValueError('预览失败，请检查数据源是否仍然可访问。') from e
 
+    @app.get('/api/sources/{source_id}/context')
+    def business_context(source_id: str):
+        return store.business_context(source_id)
+
+    @app.put('/api/sources/{source_id}/context')
+    def save_business_context(source_id: str, data: BusinessContextInput):
+        return store.save_business_context(source_id, data.model_dump())
+
     @app.get('/api/conversations')
     def conversations():
         return store.conversations()
@@ -239,6 +254,12 @@ def create_app(storage_path=None):
         for m in store.messages(cid):
             lines.extend(['## ' + t('问题' if m['role'] == 'user' else '分析'), '', m['content'], ''])
             r = m.get('result') or {}
+            if r.get('context_version'):
+                lines.extend([t(f"业务上下文版本：{r['context_version']}"), ''])
+                context = r.get('business_context') or {}
+                for key, label in [('notes', '业务说明'), ('fields', '字段解释'), ('metrics', '指标定义'), ('relationships', '关联关系')]:
+                    if context.get(key):
+                        lines.extend(['### ' + t(label), '', context[key], ''])
             if r.get('sql'):
                 lines.extend(['```sql', r['executed_sql'], '```', '', t(f"返回 {r['row_count']} 行。") + (t('结果已截断。') if r['truncated'] else ''), ''])
                 lines.append(t('模式') + ': ' + t('规则演示' if r.get('mode') == 'demo' else 'AI 分析'))

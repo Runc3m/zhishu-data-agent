@@ -1,5 +1,8 @@
 {
   "数据源不存在，请重新选择。": "Data source not found. Select another source.", "对话不存在。": "Conversation not found.",
+  "读取业务上下文": "Reading business context", "使用已确认的版本 {0}": "Using confirmed version {0}",
+  "业务上下文版本：{0}": "Business context version: {0}", "业务说明": "Business notes",
+  "字段解释": "Column descriptions", "指标定义": "Metric definitions", "关联关系": "Relationships",
   "请填写必填项。": "Complete the required field.", "输入内容过短。": "The input is too short.",
   "输入内容超过长度限制。": "The input exceeds the length limit.", "请选择有效的选项。": "Select a valid option.",
   "请输入整数。": "Enter an integer.", "数值小于允许范围。": "The value is below the allowed range.", "数值超过允许范围。": "The value exceeds the allowed range.",
