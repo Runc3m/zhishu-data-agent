@@ -132,7 +132,11 @@ def create_app(storage_path=None):
     async def invalid_fields(request, exc):
         # Pydantic normally includes input values in validation errors; omit those
         # because settings and connection forms can contain credentials.
-        return JSONResponse({'detail': [{'loc': e['loc'], 'msg': translate(e['msg'], request.state.language)} for e in exc.errors()]}, status_code=422)
+        common = {'missing': '请填写必填项。', 'string_too_short': '输入内容过短。',
+                  'string_too_long': '输入内容超过长度限制。', 'literal_error': '请选择有效的选项。',
+                  'int_parsing': '请输入整数。', 'greater_than_equal': '数值小于允许范围。',
+                  'less_than_equal': '数值超过允许范围。'}
+        return JSONResponse({'detail': [{'loc': e['loc'], 'msg': translate(common.get(e['type'], e['msg']), request.state.language)} for e in exc.errors()]}, status_code=422)
 
     @app.get('/api/health')
     def health():

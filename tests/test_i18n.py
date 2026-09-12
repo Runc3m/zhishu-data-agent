@@ -45,6 +45,7 @@ def test_preference_migration_preserves_settings_and_history(client):
     assert Store(store.root).preferences()['language'] == 'en-US'
     assert (store.root / 'local.key').read_bytes() == key_file
     assert client.put('/api/preferences', json={'language': 'invalid'}).status_code == 422
+    assert 'Select a valid option' in client.put('/api/preferences', json={'language': 'invalid'}).text
 
 
 @pytest.mark.parametrize('question,count', [

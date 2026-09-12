@@ -20,4 +20,4 @@ Versions: `requirements.lock.txt`, `requirements-build.txt`, `frontend/pnpm-lock
 
 ## Product inspiration / 产品思路借鉴
 
-The schema → SQL → execution → explanation workflow was informed by DataHub Analytics Agent. Zhishu is independently implemented, not an official DataHub product, affiliated release or fork distribution. / 工作流思路借鉴 DataHub Analytics Agent；知数是独立实现，不是其官方产品、关联版本或分叉发行版。
+The schema → SQL → execution → explanation workflow was informed by [DataHub Analytics Agent](https://github.com/datahub-project/analytics-agent). Zhishu is independently implemented, not an official DataHub product, affiliated release or fork distribution. / 工作流思路借鉴 DataHub Analytics Agent；知数是独立实现，不是其官方产品、关联版本或分叉发行版。

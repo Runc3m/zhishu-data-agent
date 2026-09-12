@@ -71,5 +71,6 @@
   "当前是本机单用户工作台。给别人用请分享免安装 ZIP，对方填写自己的 Key；127.0.0.1 不是公网网址。": "Zhishu is a local, single-user workspace. Each user runs their own copy with their own model credentials.",
   "开始分析": "Start analyzing", "关闭提示": "Dismiss notification",
   "语言保存失败": "Could not save language preference",
+  "CSV 导入 · 表名 data": "CSV import · Table: data", "数据库只读连接": "Read-only database connection",
   "销售演示数据": "Sample sales data", "模拟数据 · 2026 年 1–8 月 · 非真实经营数据": "Sample data · Jan–Aug 2026 · Not real business records"
 }

@@ -1,5 +1,8 @@
 {
   "数据源不存在，请重新选择。": "Data source not found. Select another source.", "对话不存在。": "Conversation not found.",
+  "请填写必填项。": "Complete the required field.", "输入内容过短。": "The input is too short.",
+  "输入内容超过长度限制。": "The input exceeds the length limit.", "请选择有效的选项。": "Select a valid option.",
+  "请输入整数。": "Enter an integer.", "数值小于允许范围。": "The value is below the allowed range.", "数值超过允许范围。": "The value exceeds the allowed range.",
   "SQL 过长。": "The SQL query is too long.", "SQL 语法不完整，请调整问题。": "Invalid SQL syntax. Rephrase your question.",
   "只允许单条只读 SELECT 查询。": "Only a single read-only SELECT query is allowed.", "查询包含写入、导出或锁定操作。": "The query contains a write, export or locking operation.",
   "暂不支持递归查询。": "Recursive queries are not supported.", "分析查询暂不支持函数 {0}。": "Function {0} is not supported for analysis.",

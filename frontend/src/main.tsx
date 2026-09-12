@@ -279,7 +279,7 @@ function App() {
     const [showSchema, setShowSchema] = useState(true), [mobileMenu, setMobileMenu] = useState(false);
     const [preview, setPreview] = useState<Result | null>(null), [previewError, setPreviewError] = useState(''), [selectedTable, setSelectedTable] = useState('');
     const bottom = useRef<HTMLDivElement>(null), textarea = useRef<HTMLTextAreaElement>(null), chatGuard = useRef(false), loadSequence = useRef(0);
-    const displaySources = sources.map(s => s.id === "demo-sales" ? {...s, name: t("销售演示数据"), description: t("模拟数据 · 2026 年 1–8 月 · 非真实经营数据")} : s);
+    const displaySources = sources.map(s => s.id === "demo-sales" ? {...s, name: t("销售演示数据"), description: t("模拟数据 · 2026 年 1–8 月 · 非真实经营数据")} : {...s, description: s.kind === 'csv' ? t("CSV 导入 · 表名 data") : t("数据库只读连接")});
     const source = displaySources.find(s => s.id === sourceId);
     const notify = (text: string) => setToast(text);
     const suggestions = sourceId === 'demo-sales' ? [
