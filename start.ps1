@@ -14,17 +14,12 @@ if ($LASTEXITCODE -ne 0) {
 }
 if ($Rebuild -or -not (Test-Path -LiteralPath 'frontend\dist\index.html')) {
     $pnpmCommand = Get-Command pnpm -ErrorAction SilentlyContinue
-    $bundledPnpm = Join-Path $env:USERPROFILE '.cache\codex-runtimes\codex-primary-runtime\dependencies\node\node_modules\pnpm\bin\pnpm.cjs'
     Push-Location frontend
     try {
         if ($pnpmCommand) {
             pnpm install --frozen-lockfile
             if ($LASTEXITCODE -ne 0) { throw 'Frontend dependency installation failed.' }
             pnpm build
-        } elseif (Test-Path -LiteralPath $bundledPnpm) {
-            node $bundledPnpm install --frozen-lockfile
-            if ($LASTEXITCODE -ne 0) { throw 'Frontend dependency installation failed.' }
-            node $bundledPnpm build
         } else {
             throw 'Install Node.js 22+ and pnpm, then run this script again.'
         }

@@ -11,3 +11,7 @@ frontend/dist/
 build/
 release/
 *.spec
+*.lnk
+demo-screenshots/
+.tools/
+evaluation-results/
