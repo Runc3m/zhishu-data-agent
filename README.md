@@ -4,7 +4,7 @@
 
 [English](README.en.md) · [下载 Windows 应用](https://github.com/Runc3m/zhishu-data-agent/releases) · [使用指南](docs/usage.zh-CN.md) · [路线图](docs/roadmap.zh-CN.md)
 
-![知数：根据内置模拟销售记录生成的地区对比图](docs/assets/workspace.zh-CN.png)
+![知数：根据合成零售订单与退款数据生成的地区净收入图](docs/assets/workspace.zh-CN.png)
 
 ## 从问题到结果
 
@@ -13,6 +13,7 @@
 - **本地数据工作空间**：导入 CSV，或连接 PostgreSQL / MySQL；数据源与分析历史自动保存。
 - **中英文切换**：界面、分析提示与建议问题随语言切换；已有对话和原始数据保持原样。
 - **轻量模型配置**：DeepSeek 只需填写 API Key；也支持兼容 Chat Completions 的服务及本地模型。
+- **理解业务定义**：为数据源配置字段、指标与关联说明；分析保留所用上下文版本，方便回看依据。
 - **无需密钥即可体验**：规则演示用预设查询分析实际执行的模拟记录，不调用模型。
 - **带走结果**：导出 CSV 查询结果和 Markdown 分析记录。
 
@@ -22,7 +23,7 @@
 
 ### Windows 用户
 
-1. 从 [Releases](https://github.com/Runc3m/zhishu-data-agent/releases) 下载 `Zhishu-v1.0.0-windows-x64.zip`。
+1. 从 [Releases](https://github.com/Runc3m/zhishu-data-agent/releases) 下载最新的 `Zhishu-v1.1.0-windows-x64.zip`。
 2. 完整解压，打开 `Zhishu` 文件夹，双击 `Zhishu.exe`。
 3. 浏览器会打开分析工作空间。点击建议问题，即可体验内置销售数据。
 
@@ -46,7 +47,9 @@ cd zhishu-data-agent
 
 分析自己的 CSV 时，先预览字段；自由提问需要在“模型设置”启用 AI。详细步骤见[模型配置](docs/models.zh-CN.md)。
 
-文件和历史记录存储在本机。启用远程 AI 后，问题、数据结构、最近对话与最多 30 行查询结果会发送给所选模型服务，并使用该服务的 API 额度。
+文件和历史记录存储在本机。启用远程 AI 后，问题、数据结构、已配置的业务上下文、最近对话与最多 30 行查询结果会发送给所选模型服务，并使用该服务的 API 额度。
+
+业务口径如何配置、如何核验结果，见[业务上下文](docs/business-context.zh-CN.md)与[评测说明](docs/evaluation.zh-CN.md)。
 
 ## 文档与参与
 

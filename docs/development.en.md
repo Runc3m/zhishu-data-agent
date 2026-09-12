@@ -22,6 +22,8 @@ Alternatively run `start.ps1 -Rebuild`. Frontend `pnpm dev` proxies APIs to 8100
 
 Translations are centralized in frontend/backend `locales` and accessed via `i18n`. `GET/PUT /api/preferences` stores language; message requests may specify `language`, while older clients use the saved preference. Never translate user data or historical content.
 
+Business context uses `GET/PUT /api/sources/{id}/context`, with string fields `notes`, `fields`, `metrics` and `relationships` (8,000 characters each). The server assigns versions and timestamps. Results retain `context_version` and a `business_context` snapshot. See [business context](business-context.en.md) and [evaluation](evaluation.en.md).
+
 ## Verification and releases
 
 ```powershell

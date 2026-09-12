@@ -14,7 +14,7 @@ def test_local_document_links():
 
 
 def test_bilingual_document_pairs():
-    for topic in ('usage', 'models', 'development', 'faq', 'roadmap'):
+    for topic in ('usage', 'models', 'development', 'faq', 'roadmap', 'business-context', 'evaluation'):
         for language in ('zh-CN', 'en'):
             assert (ROOT / f'docs/{topic}.{language}.md').stat().st_size > 200
     for topic in ('README', 'CONTRIBUTING', 'CHANGELOG'):

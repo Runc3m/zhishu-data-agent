@@ -1,0 +1,802 @@
+{
+  "version": "1.1.0",
+  "started_at": "2026-09-12T00:50:39.433651+00:00",
+  "completed_at": "2026-09-12T00:52:25.018054+00:00",
+  "model": "deepseek-v4-flash",
+  "provider": "deepseek",
+  "agent_sha256": "0f01ac565eff9f12de92f2be57d81dd5c31459f67a06b15e4d5bc9f8e7221ce6",
+  "fixture_sha256": "e3541cd33cb6d210186b500c78ae0d67ab8c4e5843e24787c080662a6a42e7b2",
+  "passed": 40,
+  "total": 40,
+  "method": "Live model planning and summarization; real read-only queries; golden result comparison. Clarification cases require no SQL and a nonempty answer; inspect their wording manually.",
+  "results": [
+    {
+      "case": "net_revenue",
+      "language": "zh-CN",
+      "question": "全年的净收入是多少？",
+      "passed": true,
+      "expected_rows": [
+        [
+          2220.0
+        ]
+      ],
+      "actual_rows": [
+        [
+          2220.0
+        ]
+      ],
+      "sql": "WITH eligible AS (SELECT order_id, amount_cents FROM orders WHERE status = 'paid' AND is_test = false), refund_agg AS (SELECT order_id, SUM(amount_cents) AS refund_cents FROM refunds WHERE status = 'completed' GROUP BY order_id) SELECT ROUND((COALESCE(SUM(e.amount_cents), 0) - COALESCE(SUM(r.refund_cents), 0)) / 100.0, 2) AS net_revenue_cny FROM eligible e LEFT JOIN refund_agg r ON e.order_id = r.order_id",
+      "answer": "全年净收入为 **2,220.00 元（CNY）**。\n\n计算口径：仅统计 `status='paid'` 且 `is_test=false` 的订单金额，减去这些订单对应的 `completed` 退款金额，再除以 100 换算为元。退款按原订单归属，不按退款日期过滤。\n\n说明：结果仅一行，未截断；数据为 2026 年合成零售订单。该口径不含成本，因此无法据此计算利润。",
+      "context_version": 1,
+      "errors": []
+    },
+    {
+      "case": "gross_revenue",
+      "language": "zh-CN",
+      "question": "全年的毛收入是多少元？",
+      "passed": true,
+      "expected_rows": [
+        [
+          2500.0
+        ]
+      ],
+      "actual_rows": [
+        [
+          2500.0
+        ]
+      ],
+      "sql": "SELECT ROUND(SUM(amount_cents)/100.0, 2) AS gross_revenue_cny FROM orders WHERE status = 'paid' AND is_test = false AND order_date >= DATE '2026-01-01' AND order_date < DATE '2027-01-01'",
+      "answer": "2026 年全年毛收入为 **2,500.00 元**。\n\n口径：仅统计 `status = 'paid'` 且 `is_test = false` 的订单，按订单日期归属 2026-01-01 至 2026-12-31（含首日、不含 2027-01-01）。该结果为毛收入，未扣除退款；界面图表展示的即此口径。",
+      "context_version": 1,
+      "errors": []
+    },
+    {
+      "case": "completed_refunds",
+      "language": "zh-CN",
+      "question": "有效订单已完成退款共多少元？",
+      "passed": true,
+      "expected_rows": [
+        [
+          280.0
+        ]
+      ],
+      "actual_rows": [
+        [
+          280.0
+        ]
+      ],
+      "sql": "SELECT ROUND(COALESCE(SUM(r.amount_cents), 0) / 100.0, 2) AS completed_refund_cny FROM refunds r JOIN orders o ON o.order_id = r.order_id WHERE o.status = 'paid' AND o.is_test = false AND r.status = 'completed'",
+      "answer": "有效订单（status=paid 且非测试）中，状态为 completed 的退款合计为 **280.00 元**。\n\n说明：该金额仅统计已完成退款，不含 pending/failed；退款按原订单归属，未按退款日期过滤。结果未截断。",
+      "context_version": 1,
+      "errors": []
+    },
+    {
+      "case": "eligible_count",
+      "language": "zh-CN",
+      "question": "有效订单一共有多少笔？",
+      "passed": true,
+      "expected_rows": [
+        [
+          6
+        ]
+      ],
+      "actual_rows": [
+        [
+          6
+        ]
+      ],
+      "sql": "SELECT COUNT(*) AS eligible_orders FROM orders WHERE status = 'paid' AND is_test = false",
+      "answer": "有效订单共 **6 笔**。统计口径为 `status = 'paid'` 且 `is_test = false` 的订单，已排除测试订单。该结果来自完整查询（未截断），可直接作为有效订单总数使用。",
+      "context_version": 1,
+      "errors": []
+    },
+    {
+      "case": "average_value",
+      "language": "zh-CN",
+      "question": "平均客单价是多少元，保留两位小数？",
+      "passed": true,
+      "expected_rows": [
+        [
+          416.67
+        ]
+      ],
+      "actual_rows": [
+        [
+          416.67
+        ]
+      ],
+      "sql": "SELECT ROUND(SUM(o.amount_cents) / 100.0 / COUNT(DISTINCT o.order_id), 2) AS avg_order_value_cny FROM orders o WHERE o.status = 'paid' AND o.is_test = false",
+      "answer": "平均客单价为 **416.67 元**。\n\n口径：仅统计 status=paid 且 is_test=false 的有效订单，按毛收入（订单金额合计）除以去重有效订单数计算，保留两位小数。该结果基于已返回的单行汇总，未展示明细记录。",
+      "context_version": 1,
+      "errors": []
+    },
+    {
+      "case": "q1_gross",
+      "language": "zh-CN",
+      "question": "第一季度毛收入是多少元？",
+      "passed": true,
+      "expected_rows": [
+        [
+          700.0
+        ]
+      ],
+      "actual_rows": [
+        [
+          700.0
+        ]
+      ],
+      "sql": "SELECT ROUND(SUM(o.amount_cents)/100.0, 2) AS gross_revenue_cny FROM orders o WHERE o.status = 'paid' AND o.is_test = false AND o.order_date >= DATE '2026-01-01' AND o.order_date < DATE '2026-04-01'",
+      "answer": "2026年第一季度毛收入为 **700.00 元**（人民币）。\n\n口径：仅统计 `status = paid` 且 `is_test = false` 的订单，日期范围 2026-01-01 至 2026-03-31（含首日、不含 4 月 1 日）。该结果为毛收入，未扣除退款；数据无成本字段，无法计算利润。",
+      "context_version": 1,
+      "errors": []
+    },
+    {
+      "case": "q1_net",
+      "language": "zh-CN",
+      "question": "第一季度净收入是多少元？",
+      "passed": true,
+      "expected_rows": [
+        [
+          570.0
+        ]
+      ],
+      "actual_rows": [
+        [
+          570.0
+        ]
+      ],
+      "sql": "WITH eligible AS (SELECT order_id, amount_cents FROM orders WHERE status = 'paid' AND is_test = false AND order_date >= DATE '2026-01-01' AND order_date < DATE '2026-04-01'), refund_agg AS (SELECT order_id, SUM(amount_cents) AS refund_cents FROM refunds WHERE status = 'completed' GROUP BY order_id) SELECT ROUND((COALESCE(SUM(e.amount_cents), 0) - COALESCE(SUM(r.refund_cents), 0)) / 100.0, 2) AS net_revenue_cny FROM eligible e LEFT JOIN refund_agg r ON e.order_id = r.order_id",
+      "answer": "第一季度净收入为 **570.00 元**。\n\n口径：仅统计 2026-01-01 至 2026-03-31（含首日、不含 4 月 1 日）内 status=paid 且非测试订单，扣除这些订单对应的已完成退款。该结果基于已返回的单行汇总，未展示明细，无法据此推断订单数或地区分布。",
+      "context_version": 1,
+      "errors": []
+    },
+    {
+      "case": "q2_net",
+      "language": "zh-CN",
+      "question": "第二季度净收入是多少元？",
+      "passed": true,
+      "expected_rows": [
+        [
+          950.0
+        ]
+      ],
+      "actual_rows": [
+        [
+          950.0
+        ]
+      ],
+      "sql": "WITH refund_agg AS (SELECT order_id, SUM(amount_cents) AS refund_cents FROM refunds WHERE status = 'completed' GROUP BY order_id) SELECT ROUND((SUM(o.amount_cents) - COALESCE(SUM(r.refund_cents), 0)) / 100.0, 2) AS net_revenue_cny FROM orders o LEFT JOIN refund_agg r ON o.order_id = r.order_id WHERE o.status = 'paid' AND o.is_test = false AND o.order_date >= DATE '2026-04-01' AND o.order_date < DATE '2026-07-01'",
+      "answer": "第二季度（2026-04-01 至 2026-06-30）净收入为 **950.00 元**。\n\n口径：仅统计 status=paid 且 is_test=false 的订单，扣除对应已完成（completed）退款；退款按原订单日期归属。该结果基于返回的单行数据，未展示记录不可推断。",
+      "context_version": 1,
+      "errors": []
+    },
+    {
+      "case": "july_boundary",
+      "language": "zh-CN",
+      "question": "7 月 1 日当天净收入是多少元？",
+      "passed": true,
+      "expected_rows": [
+        [
+          700.0
+        ]
+      ],
+      "actual_rows": [
+        [
+          700.0
+        ]
+      ],
+      "sql": "WITH eligible AS (SELECT order_id, amount_cents FROM orders WHERE status = 'paid' AND is_test = false AND order_date = DATE '2026-07-01'), refund_agg AS (SELECT order_id, SUM(amount_cents) AS refund_cents FROM refunds WHERE status = 'completed' GROUP BY order_id) SELECT ROUND((COALESCE(SUM(e.amount_cents), 0) - COALESCE(SUM(r.refund_cents), 0)) / 100.0, 2) AS net_revenue_cny FROM eligible e LEFT JOIN refund_agg r ON e.order_id = r.order_id",
+      "answer": "2026 年 7 月 1 日净收入为 **700.00 元**。\n\n口径：仅统计 `status='paid'` 且 `is_test=false` 的订单，扣除这些订单对应的 `completed` 退款；退款按原订单日期归属。该结果不含成本，因此不能据此计算利润。",
+      "context_version": 1,
+      "errors": []
+    },
+    {
+      "case": "regional_net",
+      "language": "zh-CN",
+      "question": "按地区字母顺序列出各地区净收入（元）。",
+      "passed": true,
+      "expected_rows": [
+        [
+          "east",
+          870.0
+        ],
+        [
+          "west",
+          1350.0
+        ]
+      ],
+      "actual_rows": [
+        [
+          "east",
+          870.0
+        ],
+        [
+          "west",
+          1350.0
+        ]
+      ],
+      "sql": "WITH eligible AS (SELECT order_id, region, amount_cents FROM orders WHERE status = 'paid' AND is_test = false), refund_agg AS (SELECT order_id, SUM(amount_cents) AS refund_cents FROM refunds WHERE status = 'completed' GROUP BY order_id) SELECT e.region AS region, ROUND((SUM(e.amount_cents) - COALESCE(SUM(r.refund_cents), 0)) / 100.0, 2) AS net_revenue_cny FROM eligible e LEFT JOIN refund_agg r ON e.order_id = r.order_id GROUP BY e.region ORDER BY e.region ASC",
+      "answer": "按地区字母顺序，净收入（元）如下：\n\n- east：870.00\n- west：1350.00\n\n口径：仅统计 status=paid 且 is_test=false 的订单，扣除对应 completed 退款，单位 CNY。结果仅含这两个地区，未展示其他地区，不能据此推断全部地区。",
+      "context_version": 1,
+      "errors": []
+    },
+    {
+      "case": "refunded_orders",
+      "language": "zh-CN",
+      "question": "有已完成退款的有效订单有多少笔？不要重复计算订单。",
+      "passed": true,
+      "expected_rows": [
+        [
+          4
+        ]
+      ],
+      "actual_rows": [
+        [
+          4
+        ]
+      ],
+      "sql": "SELECT COUNT(DISTINCT o.order_id) AS refunded_order_count FROM orders o JOIN refunds r ON o.order_id = r.order_id WHERE o.status = 'paid' AND o.is_test = false AND r.status = 'completed'",
+      "answer": "有 4 笔已完成退款的有效订单（按 order_id 去重，仅统计 status=paid 且非测试订单，退款状态为 completed）。该结果来自界面图表对应的查询，未展示记录不影响此计数。",
+      "context_version": 1,
+      "errors": []
+    },
+    {
+      "case": "join_double_count",
+      "language": "zh-CN",
+      "question": "有商品明细的有效订单毛收入是多少元？不要因为多条明细重复计金额。",
+      "passed": true,
+      "expected_rows": [
+        [
+          2500.0
+        ]
+      ],
+      "actual_rows": [
+        [
+          2500.0
+        ]
+      ],
+      "sql": "SELECT ROUND(SUM(o.amount_cents) / 100.0, 2) AS gross_revenue_cny FROM orders o JOIN (SELECT DISTINCT order_id FROM items) i ON i.order_id = o.order_id WHERE o.status = 'paid' AND o.is_test = false",
+      "answer": "有商品明细的有效订单毛收入为 **2,500.00 元**。\n\n口径：仅统计 `status='paid'` 且 `is_test=false` 的订单，并按订单去重后再汇总 `amount_cents`，因此多条商品明细不会重复计入订单金额。该结果为毛收入，未扣除退款；数据无成本字段，无法计算利润。",
+      "context_version": 1,
+      "errors": []
+    },
+    {
+      "case": "quantity",
+      "language": "zh-CN",
+      "question": "有效订单共售出多少件商品？",
+      "passed": true,
+      "expected_rows": [
+        [
+          27
+        ]
+      ],
+      "actual_rows": [
+        [
+          27
+        ]
+      ],
+      "sql": "SELECT SUM(i.quantity) AS total_units FROM orders o JOIN items i ON o.order_id = i.order_id WHERE o.status = 'paid' AND o.is_test = false",
+      "answer": "有效订单（status=paid 且非测试）共售出 **27 件**商品（items.quantity 合计）。\n\n说明：该结果仅统计有效订单的商品件数，不含取消或测试订单；查询返回单行汇总，未截断。",
+      "context_version": 1,
+      "errors": []
+    },
+    {
+      "case": "cancelled_count",
+      "language": "zh-CN",
+      "question": "非测试的取消订单有多少笔？",
+      "passed": true,
+      "expected_rows": [
+        [
+          1
+        ]
+      ],
+      "actual_rows": [
+        [
+          1
+        ]
+      ],
+      "sql": "SELECT COUNT(*) AS cancelled_orders FROM orders WHERE status = 'cancelled' AND is_test = false",
+      "answer": "非测试的取消订单共有 **1 笔**。\n\n说明：该结果基于 `status = 'cancelled'` 且 `is_test = false` 的订单计数，已排除测试订单。查询仅返回单行汇总值，未涉及金额或退款口径。",
+      "context_version": 1,
+      "errors": []
+    },
+    {
+      "case": "test_exclusion",
+      "language": "zh-CN",
+      "question": "12 月有效订单的毛收入是多少元？无订单返回 0。",
+      "passed": true,
+      "expected_rows": [
+        [
+          0.0
+        ]
+      ],
+      "actual_rows": [
+        [
+          0.0
+        ]
+      ],
+      "sql": "SELECT COALESCE(ROUND(SUM(amount_cents)/100.0, 2), 0) AS gross_revenue_cny FROM orders WHERE status = 'paid' AND is_test = false AND order_date >= DATE '2026-12-01' AND order_date < DATE '2027-01-01'",
+      "answer": "2026 年 12 月有效订单（status=paid 且 is_test=false）的毛收入为 **0.00 元**。\n\n说明：该结果来自对 2026-12-01 至 2026-12-31（含起不含止）订单金额的汇总，查询返回单行 0.0，表示该区间无符合条件的有效订单金额。此口径为毛收入，未扣除退款；界面图表中对应区间的柱形也显示为 0。",
+      "context_version": 1,
+      "errors": []
+    },
+    {
+      "case": "january_dates",
+      "language": "zh-CN",
+      "question": "1 月有效订单毛收入是多少元？包括 1 月 1 日和 1 月 31 日。",
+      "passed": true,
+      "expected_rows": [
+        [
+          300.0
+        ]
+      ],
+      "actual_rows": [
+        [
+          300.0
+        ]
+      ],
+      "sql": "SELECT ROUND(SUM(o.amount_cents) / 100.0, 2) AS gross_revenue_cny FROM orders o WHERE o.status = 'paid' AND o.is_test = false AND o.order_date >= DATE '2026-01-01' AND o.order_date < DATE '2026-02-01'",
+      "answer": "2026 年 1 月有效订单毛收入为 **300.00 元**。\n\n口径：仅统计 `status = 'paid'` 且 `is_test = false` 的订单，日期含 1 月 1 日、不含 2 月 1 日。该结果为毛收入，未扣除退款；数据无成本字段，无法计算利润。",
+      "context_version": 1,
+      "errors": []
+    },
+    {
+      "case": "pending_refund",
+      "language": "zh-CN",
+      "question": "订单 2 的净收入是多少元？",
+      "passed": true,
+      "expected_rows": [
+        [
+          200.0
+        ]
+      ],
+      "actual_rows": [
+        [
+          200.0
+        ]
+      ],
+      "sql": "WITH r AS (SELECT order_id, SUM(amount_cents) AS refund_cents FROM refunds WHERE status = 'completed' GROUP BY order_id) SELECT ROUND((o.amount_cents - COALESCE(r.refund_cents, 0)) / 100.0, 2) AS net_revenue_cny FROM orders o LEFT JOIN r ON o.order_id = r.order_id WHERE o.order_id = 2 AND o.status = 'paid' AND o.is_test = false",
+      "answer": "订单 2 的净收入为 **200.00 元**。\n\n计算口径：该订单为 paid 且非测试订单，原始金额扣除已完成的退款后，按元保留两位小数。查询仅返回这一条记录，未截断，因此结果完整。注意：数据无成本字段，无法据此计算利润。",
+      "context_version": 1,
+      "errors": []
+    },
+    {
+      "case": "cents_unit",
+      "language": "zh-CN",
+      "question": "有效订单的原始金额合计是多少分？这次不要换算成元。",
+      "passed": true,
+      "expected_rows": [
+        [
+          250000
+        ]
+      ],
+      "actual_rows": [
+        [
+          250000
+        ]
+      ],
+      "sql": "SELECT SUM(o.amount_cents) AS gross_amount_cents FROM orders o WHERE o.status = 'paid' AND o.is_test = false",
+      "answer": "有效订单（status=paid 且 is_test=false）的原始金额合计为 **250000 分**，未换算为元。该结果基于查询返回的单行汇总，未截断。",
+      "context_version": 1,
+      "errors": []
+    },
+    {
+      "case": "missing_cost",
+      "language": "zh-CN",
+      "question": "全年的利润是多少？",
+      "passed": true,
+      "expected_rows": null,
+      "actual_rows": [],
+      "sql": null,
+      "answer": "无法计算利润：当前数据源没有成本字段（数据源描述与业务定义均明确“无成本字段”）。利润 = 收入 - 成本，缺少成本无法得出。可改为查询全年净收入或毛收入，请确认需要哪一个。",
+      "context_version": 1,
+      "errors": []
+    },
+    {
+      "case": "conflicting_metric",
+      "language": "zh-CN",
+      "question": "按业务说明计算营业额。",
+      "passed": true,
+      "expected_rows": null,
+      "actual_rows": [],
+      "sql": null,
+      "answer": "无法计算营业额：业务定义中“营业额/turnover”存在两个相互冲突且未确定优先级的定义——定义 A 为全部有效订单的毛收入（gross revenue），定义 B 为全部有效订单的净收入（net revenue，即扣除已完成退款）。请确认采用哪一种口径（毛收入还是净收入），我再生成对应 SQL。",
+      "context_version": 2,
+      "errors": []
+    },
+    {
+      "case": "net_revenue",
+      "language": "en-US",
+      "question": "What is total net revenue for the year?",
+      "passed": true,
+      "expected_rows": [
+        [
+          2220.0
+        ]
+      ],
+      "actual_rows": [
+        [
+          2220.0
+        ]
+      ],
+      "sql": "WITH eligible_orders AS (SELECT order_id, amount_cents FROM orders WHERE status = 'paid' AND is_test = false), completed_refunds AS (SELECT order_id, SUM(amount_cents) AS refund_cents FROM refunds WHERE status = 'completed' GROUP BY order_id) SELECT ROUND((COALESCE(SUM(e.amount_cents), 0) - COALESCE(SUM(r.refund_cents), 0)) / 100.0, 2) AS net_revenue_cny FROM eligible_orders e LEFT JOIN completed_refunds r ON e.order_id = r.order_id",
+      "answer": "Total net revenue for the year is 2,220.00 CNY.\n\nThis is calculated as paid, non-test order amounts minus completed refunds, per the query result. Note the result is a single aggregate row; no breakdown by period or region is available here.",
+      "context_version": 1,
+      "errors": []
+    },
+    {
+      "case": "gross_revenue",
+      "language": "en-US",
+      "question": "What is total gross revenue in CNY for the year?",
+      "passed": true,
+      "expected_rows": [
+        [
+          2500.0
+        ]
+      ],
+      "actual_rows": [
+        [
+          2500.0
+        ]
+      ],
+      "sql": "SELECT ROUND(SUM(amount_cents) / 100.0, 2) AS gross_revenue_cny FROM orders WHERE status = 'paid' AND is_test = false AND order_date >= DATE '2026-01-01' AND order_date < DATE '2027-01-01'",
+      "answer": "The total gross revenue for 2026 is 2,500.00 CNY.\n\nThis covers paid, non-test orders with order dates from 2026-01-01 up to (but excluding) 2027-01-01, per the query scope. It is gross revenue only; refunds and costs are not deducted, so net revenue and profit are not shown here.",
+      "context_version": 1,
+      "errors": []
+    },
+    {
+      "case": "completed_refunds",
+      "language": "en-US",
+      "question": "What is the completed refund amount for eligible orders in CNY?",
+      "passed": true,
+      "expected_rows": [
+        [
+          280.0
+        ]
+      ],
+      "actual_rows": [
+        [
+          280.0
+        ]
+      ],
+      "sql": "SELECT ROUND(COALESCE(SUM(r.amount_cents), 0) / 100.0, 2) AS completed_refunds_cny FROM orders o JOIN refunds r ON o.order_id = r.order_id WHERE o.status = 'paid' AND o.is_test = false AND r.status = 'completed'",
+      "answer": "The completed refund amount for eligible orders is **280.00 CNY**.\n\nThis sums `refunds.amount_cents` for refunds with status `completed`, joined to orders that are `paid` and non-test, converted to CNY. Note: refunds are attributed to the original order date, and only completed refunds are included (pending/failed excluded).",
+      "context_version": 1,
+      "errors": []
+    },
+    {
+      "case": "eligible_count",
+      "language": "en-US",
+      "question": "How many eligible orders are there?",
+      "passed": true,
+      "expected_rows": [
+        [
+          6
+        ]
+      ],
+      "actual_rows": [
+        [
+          6
+        ]
+      ],
+      "sql": "SELECT COUNT(*) AS eligible_orders FROM orders WHERE status = 'paid' AND is_test = false",
+      "answer": "There are 6 eligible orders, defined as orders with status = 'paid' and is_test = false. This count comes from the full result set (not truncated), so it reflects all matching records. Note that eligibility here concerns revenue-relevant orders only; cancelled, pending, and test orders are excluded.",
+      "context_version": 1,
+      "errors": []
+    },
+    {
+      "case": "average_value",
+      "language": "en-US",
+      "question": "What is average order value in CNY rounded to two decimals?",
+      "passed": true,
+      "expected_rows": [
+        [
+          416.67
+        ]
+      ],
+      "actual_rows": [
+        [
+          416.67
+        ]
+      ],
+      "sql": "SELECT ROUND(SUM(o.amount_cents) / 100.0 / COUNT(DISTINCT o.order_id), 2) AS average_order_value_cny FROM orders o WHERE o.status = 'paid' AND o.is_test = false",
+      "answer": "The average order value is 416.67 CNY.\n\nThis is calculated as gross revenue divided by the number of eligible orders (status = paid, non-test), rounded to two decimals. It reflects gross order value, not net of refunds.",
+      "context_version": 1,
+      "errors": []
+    },
+    {
+      "case": "q1_gross",
+      "language": "en-US",
+      "question": "What is Q1 gross revenue in CNY?",
+      "passed": true,
+      "expected_rows": [
+        [
+          700.0
+        ]
+      ],
+      "actual_rows": [
+        [
+          700.0
+        ]
+      ],
+      "sql": "SELECT ROUND(SUM(o.amount_cents) / 100.0, 2) AS gross_revenue_cny FROM orders o WHERE o.status = 'paid' AND o.is_test = false AND o.order_date >= DATE '2026-01-01' AND o.order_date < DATE '2026-04-01'",
+      "answer": "Q1 gross revenue is 700.00 CNY. This is the sum of paid, non-test orders from 2026-01-01 through 2026-03-31, converted from cents. It excludes refunds, so it is gross rather than net revenue.",
+      "context_version": 1,
+      "errors": []
+    },
+    {
+      "case": "q1_net",
+      "language": "en-US",
+      "question": "What is Q1 net revenue in CNY?",
+      "passed": true,
+      "expected_rows": [
+        [
+          570.0
+        ]
+      ],
+      "actual_rows": [
+        [
+          570.0
+        ]
+      ],
+      "sql": "WITH eligible_orders AS (\n  SELECT order_id, amount_cents\n  FROM orders\n  WHERE status = 'paid'\n    AND is_test = false\n    AND order_date >= DATE '2026-01-01'\n    AND order_date < DATE '2026-04-01'\n),\ncompleted_refunds AS (\n  SELECT order_id, SUM(amount_cents) AS refund_cents\n  FROM refunds\n  WHERE status = 'completed'\n  GROUP BY order_id\n)\nSELECT ROUND((COALESCE(SUM(e.amount_cents), 0) - COALESCE(SUM(r.refund_cents), 0)) / 100.0, 2) AS net_revenue_cny\nFROM eligible_orders e\nLEFT JOIN completed_refunds r ON e.order_id = r.order_id;",
+      "answer": "Q1 net revenue is 570.00 CNY.\n\nThis is calculated as paid, non-test orders from 2026-01-01 to 2026-03-31, minus completed refunds attributed to those orders. The chart in the interface reflects this result.",
+      "context_version": 1,
+      "errors": []
+    },
+    {
+      "case": "q2_net",
+      "language": "en-US",
+      "question": "What is Q2 net revenue in CNY?",
+      "passed": true,
+      "expected_rows": [
+        [
+          950.0
+        ]
+      ],
+      "actual_rows": [
+        [
+          950.0
+        ]
+      ],
+      "sql": "WITH eligible_orders AS (\n  SELECT order_id, amount_cents\n  FROM orders\n  WHERE status = 'paid'\n    AND is_test = false\n    AND order_date >= DATE '2026-04-01'\n    AND order_date < DATE '2026-07-01'\n),\ncompleted_refunds AS (\n  SELECT order_id, SUM(amount_cents) AS refund_cents\n  FROM refunds\n  WHERE status = 'completed'\n  GROUP BY order_id\n)\nSELECT ROUND((COALESCE(SUM(e.amount_cents), 0) - COALESCE(SUM(r.refund_cents), 0)) / 100.0, 2) AS net_revenue_cny\nFROM eligible_orders e\nLEFT JOIN completed_refunds r ON e.order_id = r.order_id;",
+      "answer": "Q2 2026 net revenue is 950.00 CNY.\n\nThis is calculated as paid, non-test orders from 2026-04-01 to 2026-06-30, minus completed refunds attributed to those orders. The chart in the interface reflects this result.",
+      "context_version": 1,
+      "errors": []
+    },
+    {
+      "case": "july_boundary",
+      "language": "en-US",
+      "question": "What is net revenue in CNY on July 1?",
+      "passed": true,
+      "expected_rows": [
+        [
+          700.0
+        ]
+      ],
+      "actual_rows": [
+        [
+          700.0
+        ]
+      ],
+      "sql": "WITH eligible AS (SELECT order_id, amount_cents FROM orders WHERE status = 'paid' AND is_test = false AND order_date = DATE '2026-07-01'), refunded AS (SELECT r.order_id, SUM(r.amount_cents) AS refund_cents FROM refunds r JOIN eligible e ON e.order_id = r.order_id WHERE r.status = 'completed' GROUP BY r.order_id) SELECT ROUND((COALESCE((SELECT SUM(amount_cents) FROM eligible), 0) - COALESCE((SELECT SUM(refund_cents) FROM refunded), 0)) / 100.0, 2) AS net_revenue_cny",
+      "answer": "Net revenue on July 1, 2026 was 700.00 CNY.\n\nThis equals paid, non-test order amounts minus completed refunds attributed to that order date, per the query result. The chart in the interface reflects this value.",
+      "context_version": 1,
+      "errors": []
+    },
+    {
+      "case": "regional_net",
+      "language": "en-US",
+      "question": "Show net revenue in CNY by region, ordered alphabetically by region.",
+      "passed": true,
+      "expected_rows": [
+        [
+          "east",
+          870.0
+        ],
+        [
+          "west",
+          1350.0
+        ]
+      ],
+      "actual_rows": [
+        [
+          "east",
+          870.0
+        ],
+        [
+          "west",
+          1350.0
+        ]
+      ],
+      "sql": "WITH eligible_orders AS (SELECT order_id, region, amount_cents FROM orders WHERE status = 'paid' AND is_test = false), completed_refunds AS (SELECT order_id, SUM(amount_cents) AS refund_cents FROM refunds WHERE status = 'completed' GROUP BY order_id) SELECT eo.region, ROUND((SUM(eo.amount_cents) - COALESCE(SUM(cr.refund_cents), 0)) / 100.0, 2) AS net_revenue_cny FROM eligible_orders eo LEFT JOIN completed_refunds cr ON eo.order_id = cr.order_id GROUP BY eo.region ORDER BY eo.region",
+      "answer": "Net revenue by region (CNY), alphabetically:\n\n- east: 870.00\n- west: 1350.00\n\nNet revenue = paid, non-test order amounts minus completed refunds, in CNY. Only two regions were returned; no other regions can be inferred. The chart in the interface reflects these values.",
+      "context_version": 1,
+      "errors": []
+    },
+    {
+      "case": "refunded_orders",
+      "language": "en-US",
+      "question": "How many eligible orders have completed refunds? Count each order once.",
+      "passed": true,
+      "expected_rows": [
+        [
+          4
+        ]
+      ],
+      "actual_rows": [
+        [
+          4
+        ]
+      ],
+      "sql": "SELECT COUNT(DISTINCT o.order_id) AS refunded_order_count FROM orders o JOIN refunds r ON o.order_id = r.order_id WHERE o.status = 'paid' AND o.is_test = false AND r.status = 'completed'",
+      "answer": "4 eligible orders have completed refunds, counting each order once. This counts distinct paid, non-test orders with at least one completed refund.",
+      "context_version": 1,
+      "errors": []
+    },
+    {
+      "case": "join_double_count",
+      "language": "en-US",
+      "question": "What is gross revenue in CNY for eligible orders with item details? Do not duplicate amounts for multiple items.",
+      "passed": true,
+      "expected_rows": [
+        [
+          2500.0
+        ]
+      ],
+      "actual_rows": [
+        [
+          2500.0
+        ]
+      ],
+      "sql": "WITH eligible_orders AS (SELECT order_id, amount_cents FROM orders WHERE status = 'paid' AND is_test = false), order_items AS (SELECT order_id, SUM(quantity) AS total_quantity FROM items GROUP BY order_id) SELECT ROUND(SUM(e.amount_cents) / 100.0, 2) AS gross_revenue_cny FROM eligible_orders e INNER JOIN order_items i ON e.order_id = i.order_id",
+      "answer": "Gross revenue for eligible orders (paid, non-test) with item details is **2,500.00 CNY**.\n\nThe query joins eligible orders to an aggregated item summary (one row per order), so order amounts are not duplicated across multiple items. Scope is limited to the returned single row; no further breakdown by region, date, or item is available here.",
+      "context_version": 1,
+      "errors": []
+    },
+    {
+      "case": "quantity",
+      "language": "en-US",
+      "question": "How many units were sold in eligible orders?",
+      "passed": true,
+      "expected_rows": [
+        [
+          27
+        ]
+      ],
+      "actual_rows": [
+        [
+          27
+        ]
+      ],
+      "sql": "SELECT SUM(i.quantity) AS units_sold FROM items i JOIN orders o ON o.order_id = i.order_id WHERE o.status = 'paid' AND o.is_test = false",
+      "answer": "27 units were sold in eligible orders (paid, non-test). This is the total quantity across all matching item rows.",
+      "context_version": 1,
+      "errors": []
+    },
+    {
+      "case": "cancelled_count",
+      "language": "en-US",
+      "question": "How many non-test cancelled orders are there?",
+      "passed": true,
+      "expected_rows": [
+        [
+          1
+        ]
+      ],
+      "actual_rows": [
+        [
+          1
+        ]
+      ],
+      "sql": "SELECT COUNT(*) AS cancelled_order_count FROM orders WHERE status = 'cancelled' AND is_test = false",
+      "answer": "There is 1 non-test cancelled order, based on the query counting orders with status = 'cancelled' and is_test = false. This is a direct count of cancelled orders, not a revenue metric.",
+      "context_version": 1,
+      "errors": []
+    },
+    {
+      "case": "test_exclusion",
+      "language": "en-US",
+      "question": "What is December gross revenue for eligible orders in CNY? Return zero if there are no orders.",
+      "passed": true,
+      "expected_rows": [
+        [
+          0.0
+        ]
+      ],
+      "actual_rows": [
+        [
+          0.0
+        ]
+      ],
+      "sql": "SELECT COALESCE(ROUND(SUM(amount_cents) / 100.0, 2), 0) AS gross_revenue_cny FROM orders WHERE status = 'paid' AND is_test = false AND order_date >= DATE '2026-12-01' AND order_date < DATE '2027-01-01'",
+      "answer": "December 2026 gross revenue for eligible orders (paid, non-test) is **0.00 CNY**. The query returned a single row with a value of 0.0, meaning no qualifying orders fell within 2026-12-01 to 2026-12-31. This reflects gross revenue only (no refunds deducted) and excludes test orders per business rules.",
+      "context_version": 1,
+      "errors": []
+    },
+    {
+      "case": "january_dates",
+      "language": "en-US",
+      "question": "What is eligible January gross revenue in CNY, including January 1 and January 31?",
+      "passed": true,
+      "expected_rows": [
+        [
+          300.0
+        ]
+      ],
+      "actual_rows": [
+        [
+          300.0
+        ]
+      ],
+      "sql": "SELECT ROUND(SUM(o.amount_cents) / 100.0, 2) AS gross_revenue_cny FROM orders o WHERE o.status = 'paid' AND o.is_test = false AND o.order_date >= DATE '2026-01-01' AND o.order_date < DATE '2026-02-01'",
+      "answer": "Eligible January gross revenue is 300.00 CNY.\n\nThis covers paid, non-test orders with order dates from 2026-01-01 through 2026-01-31 (the query uses >= Jan 1 and < Feb 1). It is gross revenue only, not net of refunds, and excludes cancelled, pending, and test orders.",
+      "context_version": 1,
+      "errors": []
+    },
+    {
+      "case": "pending_refund",
+      "language": "en-US",
+      "question": "What is net revenue for order 2 in CNY?",
+      "passed": true,
+      "expected_rows": [
+        [
+          200.0
+        ]
+      ],
+      "actual_rows": [
+        [
+          200.0
+        ]
+      ],
+      "sql": "WITH r AS (SELECT order_id, SUM(amount_cents) AS refund_cents FROM refunds WHERE status = 'completed' GROUP BY order_id) SELECT ROUND((o.amount_cents - COALESCE(r.refund_cents, 0)) / 100.0, 2) AS net_revenue_cny FROM orders o LEFT JOIN r ON o.order_id = r.order_id WHERE o.order_id = 2 AND o.status = 'paid' AND o.is_test = false",
+      "answer": "Net revenue for order 2 is 200.00 CNY. This is the paid, non-test order's gross amount minus completed refunds, converted from cents.",
+      "context_version": 1,
+      "errors": []
+    },
+    {
+      "case": "cents_unit",
+      "language": "en-US",
+      "question": "What is the sum of eligible order gross amounts in cents? Do not convert to CNY this time.",
+      "passed": true,
+      "expected_rows": [
+        [
+          250000
+        ]
+      ],
+      "actual_rows": [
+        [
+          250000
+        ]
+      ],
+      "sql": "SELECT SUM(o.amount_cents) AS gross_amount_cents FROM orders o WHERE o.status = 'paid' AND o.is_test = false",
+      "answer": "The sum of eligible order gross amounts is 250,000 cents. This uses paid, non-test orders only, as shown in the interface chart.",
+      "context_version": 1,
+      "errors": []
+    },
+    {
+      "case": "missing_cost",
+      "language": "en-US",
+      "question": "What is annual profit?",
+      "passed": true,
+      "expected_rows": null,
+      "actual_rows": [],
+      "sql": null,
+      "answer": "Profit cannot be computed because the data source has no cost field. The confirmed business context explicitly states that no cost field is available, so annual profit is undefined. I can instead provide annual gross revenue, net revenue, or completed refunds for 2026.",
+      "context_version": 1,
+      "errors": []
+    },
+    {
+      "case": "conflicting_metric",
+      "language": "en-US",
+      "question": "Calculate turnover using the business definitions.",
+      "passed": true,
+      "expected_rows": null,
+      "actual_rows": [],
+      "sql": null,
+      "answer": "Turnover has two conflicting confirmed definitions: (A) gross revenue from all valid orders, and (B) net revenue from all valid orders. Neither is preferred, so I cannot choose one. Which definition should I use — gross turnover or net turnover? (Both would use paid, non-test orders; net would subtract completed refunds attributed to the original order date.)",
+      "context_version": 2,
+      "errors": []
+    }
+  ]
+}
