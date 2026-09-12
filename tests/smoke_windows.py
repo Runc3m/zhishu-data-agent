@@ -17,7 +17,8 @@ def main():
     parser.add_argument('exe', type=Path)
     args = parser.parse_args()
     exe = args.exe.resolve()
-    archive = exe.parent.parent / 'Zhishu-Windows-x64.zip'
+    version = (exe.parent / 'VERSION').read_text().strip()
+    archive = exe.parent.parent / f'Zhishu-v{version}-windows-x64.zip'
     with zipfile.ZipFile(archive) as z:
         names = z.namelist()
         forbidden = {'storage', 'local.key', 'app.sqlite3', '.env', 'launcher.log'}
@@ -48,6 +49,8 @@ def main():
                     raise AssertionError('Application did not become ready')
                 assert actual != port
                 assert client.get(url).status_code == 200
+                assert client.get(url + '/favicon.svg').status_code == 200
+                assert client.get(url + '/api/health').json()['version'] == version
                 settings = client.get(url + '/api/settings').json()
                 assert settings['mode'] == 'demo' and settings['provider'] == 'deepseek'
                 assert not settings['has_api_key']
@@ -63,6 +66,12 @@ def main():
                 sid = csv.json()['id']
                 assert client.get(url + f'/api/sources/{sid}/preview').json()['row_count'] == 2
                 assert client.get(url + f'/api/conversations/{cid}/export').status_code == 200
+                assert client.put(url + '/api/preferences', json={'language': 'en-US'}).status_code == 200
+                events = client.post(url + f'/api/conversations/{cid}/messages', json={'content': 'Monthly sales trend'})
+                parsed = [json.loads(line[6:]) for line in events.text.splitlines() if line.startswith('data: ')]
+                english = next(e['result'] for e in parsed if e['type'] == 'result')
+                assert english['language'] == 'en-US' and english['row_count'] == 8
+                assert '## Question' in client.get(url + f'/api/conversations/{cid}/export').text
                 second = subprocess.run(command, creationflags=subprocess.CREATE_NO_WINDOW, timeout=15)
                 assert second.returncode == 0 and process.poll() is None
                 print('Packaged EXE: startup, port conflict, frontend, clean defaults, SQL, chart, CSV, export, single-instance PASS')
