@@ -39,6 +39,7 @@ class Store:
             c.executescript('''
             CREATE TABLE IF NOT EXISTS sources (id TEXT PRIMARY KEY, payload TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS settings (id INTEGER PRIMARY KEY, payload TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS preferences (id INTEGER PRIMARY KEY, language TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS conversations (
                 id TEXT PRIMARY KEY, title TEXT NOT NULL, source_id TEXT NOT NULL,
                 created_at TEXT NOT NULL, updated_at TEXT NOT NULL);
@@ -60,6 +61,18 @@ class Store:
 
     def encrypt(self, value):
         return self.cipher.encrypt(value.encode()).decode() if value else ''
+
+    def preferences(self):
+        with self.connect() as c:
+            row = c.execute('SELECT language FROM preferences WHERE id=1').fetchone()
+        return {'language': row['language'] if row else 'zh-CN'}
+
+    def save_preferences(self, language):
+        if language not in ('zh-CN', 'en-US'):
+            raise ValueError('Unsupported language')
+        with self.connect() as c:
+            c.execute('INSERT OR REPLACE INTO preferences VALUES (1, ?)', (language,))
+        return self.preferences()
 
     def decrypt(self, value):
         return self.cipher.decrypt(value.encode()).decode() if value else ''

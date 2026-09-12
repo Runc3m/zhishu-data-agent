@@ -12,3 +12,7 @@
 @media(max-height:820px) and (min-width:761px){.welcome{padding-top:21px;padding-bottom:16px}.welcome-symbol{display:none}.welcome-kicker{margin-bottom:6px}.welcome h2{font-size:1.65rem}.welcome>p{margin-top:8px;font-size:.875rem}.current-data{margin-top:17px;padding:10px 13px}.suggestions{margin-top:12px;gap:10px}.suggestions>button{padding:10px 13px}.suggestion-top{margin-bottom:7px}.welcome-foot{margin-top:14px}.analysis-bar{padding-top:15px;padding-bottom:15px}}
 @media(max-width:760px){.composer-disclaimer{font-size:.75rem}.composer textarea{font-size:.875rem}.schema-fields>div{font-size:.875rem}.welcome>p{font-size:.875rem}.suggestions{grid-template-columns:1fr 1fr}.suggestions>button>span:last-child{font-size:.8125rem}.welcome-symbol{display:none}.welcome{padding-top:20px}.welcome-foot{font-size:.75rem}.mode-badge{font-size:.6875rem}.mode small{font-size:.75rem}.tabs{gap:10px}.tabs>button{font-size:.8125rem}.result-footer{flex-wrap:wrap}.analysis-bar h1{max-width:150px}.source-select select{max-width:132px;font-size:.75rem}.composer-disclaimer a{font-size:.75rem}}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}.spin{animation-duration:2s}}
+/* Keep the language control visible without shrinking the workspace title. */
+.language-select { width: auto; min-width: 106px; padding: 7px 9px; border: 1px solid #dfe8e5; border-radius: 7px; background: white; color: #405b55; font: inherit; }
+html[lang="en-US"] .top-actions { flex-wrap: wrap; }
+html[lang="en-US"] .nav-item { white-space: normal; }

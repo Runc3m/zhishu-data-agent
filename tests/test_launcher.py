@@ -2,6 +2,7 @@ import json
 import socket
 
 from launcher import healthy, lock_storage, reserve_socket, storage_id
+from backend.version import VERSION
 
 
 def test_health_identity(tmp_path):
@@ -41,7 +42,7 @@ def test_health_does_not_follow_system_proxy(monkeypatch, tmp_path):
     from io import BytesIO
     class Opener:
         def open(self, url, timeout):
-            return BytesIO(json.dumps({'app': 'zhishu-data-agent', 'version': '1.1.0', 'instance': storage_id(tmp_path)}).encode())
+            return BytesIO(json.dumps({'app': 'zhishu-data-agent', 'version': VERSION, 'instance': storage_id(tmp_path)}).encode())
     def build(handler):
         assert handler.proxies == {}
         return Opener()

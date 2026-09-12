@@ -18,6 +18,8 @@ from .agent import Agent, call_model
 from .engines import Engines, csv_bytes, public_source
 from .store import Store
 from .providers import DEEPSEEK_URL, DEEPSEEK_MODEL, provider_settings
+from .i18n import translate
+from .version import VERSION
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -71,6 +73,7 @@ class ConversationInput(BaseModel):
 
 class MessageInput(BaseModel):
     content: str = Field(min_length=1, max_length=4000)
+    language: Literal['zh-CN', 'en-US'] | None = None
 
     @field_validator('content')
     @classmethod
@@ -78,6 +81,10 @@ class MessageInput(BaseModel):
         if not v.strip():
             raise ValueError('请输入问题。')
         return v.strip()
+
+
+class PreferencesInput(BaseModel):
+    language: Literal['zh-CN', 'en-US']
 
 
 def create_app(storage_path=None):
@@ -92,17 +99,19 @@ def create_app(storage_path=None):
         engines.seed()
         yield
 
-    app = FastAPI(title='知数 Data Agent', version='1.0.0', lifespan=lifespan)
+    app = FastAPI(title='Zhishu Data Agent', version=VERSION, lifespan=lifespan)
     app.state.store, app.state.engines, app.state.agent = store, engines, agent
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=['127.0.0.1', 'localhost', '[::1]', 'testserver'])
 
     @app.middleware('http')
     async def local_guard(request: Request, call_next):
+        requested = request.headers.get('accept-language', '')
+        request.state.language = 'en-US' if requested.startswith('en') else 'zh-CN' if requested.startswith('zh') else store.preferences()['language']
         origin = request.headers.get('origin')
         if origin and origin != str(request.base_url).rstrip('/') and origin not in ('http://127.0.0.1:5173', 'http://localhost:5173'):
-            return JSONResponse({'detail': '不允许来自其他网站的请求。'}, status_code=403)
+            return JSONResponse({'detail': translate('不允许来自其他网站的请求。', request.state.language)}, status_code=403)
         if request.headers.get('sec-fetch-site') == 'cross-site':
-            return JSONResponse({'detail': '不允许跨站请求。'}, status_code=403)
+            return JSONResponse({'detail': translate('不允许跨站请求。', request.state.language)}, status_code=403)
         response = await call_next(request)
         response.headers['X-Content-Type-Options'] = 'nosniff'
         response.headers['Referrer-Policy'] = 'no-referrer'
@@ -113,18 +122,30 @@ def create_app(storage_path=None):
 
     @app.exception_handler(ValueError)
     async def invalid(request, exc):
-        return JSONResponse({'detail': str(exc)}, status_code=400)
+        return JSONResponse({'detail': translate(str(exc), request.state.language)}, status_code=400)
+
+    @app.exception_handler(HTTPException)
+    async def invalid_http(request, exc):
+        return JSONResponse({'detail': translate(exc.detail, request.state.language)}, status_code=exc.status_code)
 
     @app.exception_handler(RequestValidationError)
     async def invalid_fields(request, exc):
         # Pydantic normally includes input values in validation errors; omit those
         # because settings and connection forms can contain credentials.
-        return JSONResponse({'detail': [{'loc': e['loc'], 'msg': e['msg']} for e in exc.errors()]}, status_code=422)
+        return JSONResponse({'detail': [{'loc': e['loc'], 'msg': translate(e['msg'], request.state.language)} for e in exc.errors()]}, status_code=422)
 
     @app.get('/api/health')
     def health():
         instance = hashlib.sha256(str(store.root.resolve()).casefold().encode()).hexdigest()[:16]
-        return {'status': 'ok', 'version': '1.1.0', 'app': 'zhishu-data-agent', 'instance': instance}
+        return {'status': 'ok', 'version': VERSION, 'app': 'zhishu-data-agent', 'instance': instance}
+
+    @app.get('/api/preferences')
+    def preferences():
+        return store.preferences()
+
+    @app.put('/api/preferences')
+    def save_preferences(data: PreferencesInput):
+        return store.save_preferences(data.language)
 
     @app.get('/api/settings')
     def settings():
@@ -136,12 +157,12 @@ def create_app(storage_path=None):
         return store.settings()
 
     @app.post('/api/settings/test')
-    def test_settings(data: SettingsInput):
+    def test_settings(data: SettingsInput, request: Request):
         config = data.model_dump()
         if config['api_key'] is None:
             config['api_key'] = store.settings(private=True).get('api_key', '')
         call_model(config, [{'role': 'user', 'content': 'Reply with OK.'}], max_tokens=128)
-        return {'ok': True, 'message': '模型连接成功。'}
+        return {'ok': True, 'message': translate('模型连接成功。', request.state.language)}
 
     @app.get('/api/sources')
     def sources():
@@ -191,13 +212,14 @@ def create_app(storage_path=None):
     @app.post('/api/conversations/{cid}/messages')
     def chat(cid: str, data: MessageInput):
         store.conversation(cid)
+        language = data.language or store.preferences()['language']
         with guard:
             if cid in active:
                 raise HTTPException(409, '这个对话正在分析，请稍后再发。')
             active.add(cid)
         def stream():
             try:
-                for event in agent.run(cid, data.content):
+                for event in agent.run(cid, data.content, language=language):
                     yield 'data: ' + json.dumps(event, ensure_ascii=False) + '\n\n'
             finally:
                 with guard:
@@ -205,15 +227,17 @@ def create_app(storage_path=None):
         return StreamingResponse(stream(), media_type='text/event-stream', headers={'X-Accel-Buffering': 'no', 'Cache-Control': 'no-cache'})
 
     @app.get('/api/conversations/{cid}/export')
-    def export_conversation(cid: str):
+    def export_conversation(cid: str, language: Literal['zh-CN', 'en-US'] | None = None):
+        language = language or store.preferences()['language']
+        t = lambda text: translate(text, language)
         conversation = store.conversation(cid)
-        lines = [f"# {conversation['title']}", '', f"数据源：{store.source(conversation['source_id'])['name']}", '']
+        lines = [f"# {conversation['title']}", '', f"{t('数据源')}: {store.source(conversation['source_id'])['name']}", '']
         for m in store.messages(cid):
-            lines.extend(['## ' + ('问题' if m['role'] == 'user' else '分析'), '', m['content'], ''])
+            lines.extend(['## ' + t('问题' if m['role'] == 'user' else '分析'), '', m['content'], ''])
             r = m.get('result') or {}
             if r.get('sql'):
-                lines.extend(['```sql', r['executed_sql'], '```', '', f"返回 {r['row_count']} 行。" + ('结果已截断。' if r['truncated'] else ''), ''])
-                lines.append('模式：' + ('规则演示' if r.get('mode') == 'demo' else 'AI 分析'))
+                lines.extend(['```sql', r['executed_sql'], '```', '', t(f"返回 {r['row_count']} 行。") + (t('结果已截断。') if r['truncated'] else ''), ''])
+                lines.append(t('模式') + ': ' + t('规则演示' if r.get('mode') == 'demo' else 'AI 分析'))
         return Response('\n'.join(lines), media_type='text/markdown; charset=utf-8', headers={'Content-Disposition': 'attachment; filename="analysis.md"'})
 
     @app.get('/api/conversations/{cid}/messages/{mid}/csv')
@@ -229,12 +253,12 @@ def create_app(storage_path=None):
 
     @app.get('/favicon.svg')
     def favicon():
-        return FileResponse(ROOT / 'frontend' / 'public' / 'favicon.svg')
+        return FileResponse(dist / 'favicon.svg')
 
     @app.get('/')
-    def index():
+    def index(request: Request):
         if not (dist / 'index.html').exists():
-            return JSONResponse({'detail': '前端尚未构建，请运行 start.ps1。'}, status_code=503)
+            return JSONResponse({'detail': translate('前端尚未构建，请运行 start.ps1。', request.state.language)}, status_code=503)
         return FileResponse(dist / 'index.html')
 
     return app
