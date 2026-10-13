@@ -2,6 +2,7 @@ import json
 import hashlib
 import os
 import threading
+import tempfile
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Literal
@@ -20,6 +21,8 @@ from .store import Store
 from .providers import DEEPSEEK_URL, DEEPSEEK_MODEL, provider_settings
 from .i18n import translate
 from .version import VERSION
+from .commerce import seed_commerce
+from .warehouse import import_package, create_experiment, run_checks
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -74,6 +77,7 @@ class ConversationInput(BaseModel):
 class MessageInput(BaseModel):
     content: str = Field(min_length=1, max_length=4000)
     language: Literal['zh-CN', 'en-US'] | None = None
+    analysis_mode: Literal['auto', 'query', 'investigate'] = 'auto'
 
     @field_validator('content')
     @classmethod
@@ -94,6 +98,10 @@ class BusinessContextInput(BaseModel):
     relationships: str = Field(default='', max_length=8000)
 
 
+class ExperimentInput(BaseModel):
+    fault: Literal['control', 'fanout', 'missing_partition', 'status_filter', 'stale_mart']
+
+
 def create_app(storage_path=None):
     store = Store(Path(storage_path or os.environ.get('DATA_AGENT_STORAGE', ROOT / 'storage')))
     engines = Engines(store)
@@ -104,9 +112,10 @@ def create_app(storage_path=None):
     @asynccontextmanager
     async def lifespan(app):
         engines.seed()
+        seed_commerce(store)
         yield
 
-    app = FastAPI(title='Zhishu Data Agent', version=VERSION, lifespan=lifespan)
+    app = FastAPI(title='InsightBridge · 知数', version=VERSION, lifespan=lifespan)
     app.state.store, app.state.engines, app.state.agent = store, engines, agent
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=['127.0.0.1', 'localhost', '[::1]', 'testserver'])
 
@@ -193,6 +202,42 @@ def create_app(storage_path=None):
     def add_database(data: DatabaseInput):
         return engines.connect_database(data.model_dump())
 
+    @app.post('/api/sources/package')
+    def upload_package(file: UploadFile = File(...)):
+        try:
+            with tempfile.TemporaryDirectory(dir=store.root) as tmp:
+                archive = Path(tmp) / 'upload.zip'
+                size = 0
+                with archive.open('wb') as output:
+                    while chunk := file.file.read(1024*1024):
+                        size += len(chunk)
+                        if size > 256*1024*1024:
+                            raise ValueError('Data package must be at most 256 MB.')
+                        output.write(chunk)
+                import zipfile
+                if not zipfile.is_zipfile(archive):
+                    raise ValueError('Please upload a ZIP containing CSV files.')
+                return import_package(store, archive, (file.filename or 'Data package').removesuffix('.zip'))
+        finally:
+            file.file.close()
+
+    @app.post('/api/sources/{source_id}/experiments')
+    def experiment(source_id: str, data: ExperimentInput):
+        return create_experiment(store, source_id, data.fault)
+
+    @app.get('/api/sources/{source_id}/pipeline')
+    def pipeline(source_id: str):
+        source = store.source(source_id)
+        return {'steps': source.get('pipeline', []), 'provenance': source.get('provenance', {}),
+                'experiment': source.get('experiment', False)}
+
+    @app.get('/api/sources/{source_id}/checks')
+    def checks(source_id: str):
+        source = store.source(source_id)
+        if source.get('dataset') != 'olist':
+            raise ValueError('This data source has no registered pipeline checks.')
+        return run_checks(engines, source)
+
     @app.get('/api/sources/{source_id}/preview')
     def preview(source_id: str, table: str = ''):
         source = store.source(source_id)
@@ -238,7 +283,7 @@ def create_app(storage_path=None):
             active.add(cid)
         def stream():
             try:
-                for event in agent.run(cid, data.content, language=language):
+                for event in agent.run(cid, data.content, language=language, analysis_mode=data.analysis_mode):
                     yield 'data: ' + json.dumps(event, ensure_ascii=False) + '\n\n'
             finally:
                 with guard:
@@ -254,6 +299,14 @@ def create_app(storage_path=None):
         for m in store.messages(cid):
             lines.extend(['## ' + t('问题' if m['role'] == 'user' else '分析'), '', m['content'], ''])
             r = m.get('result') or {}
+            if r.get('investigation'):
+                lines.extend(['### ' + t('调查证据'), ''])
+                for step in r['investigation']:
+                    lines.extend([f"#### [{step['step']}] {step['label']}", '', '```sql', step.get('executed_sql', ''), '```',
+                                  '', '```json', json.dumps(step, ensure_ascii=False, indent=2), '```', ''])
+            for key in ('knowledge_sources', 'quality', 'reconciliation', 'usage', 'stop_reason', 'retrieval', 'citation_audit', 'pipeline_checks'):
+                if key in r:
+                    lines.extend(['### ' + key, '', '```json', json.dumps(r[key], ensure_ascii=False, indent=2), '```', ''])
             if r.get('context_version'):
                 lines.extend([t(f"业务上下文版本：{r['context_version']}"), ''])
                 context = r.get('business_context') or {}

@@ -25,3 +25,17 @@ Reports contain dates, model, code/data digests, generated SQL, actual values an
 ## v1.1.0 validation record
 
 On 2026-09-12, `deepseek-v4-flash` passed **40/40** questions in this set. The missing-cost and conflicting-definition answers were reviewed individually in both languages: each explained the issue without inventing SQL. See the [public evaluation record](evaluations/v1.1.0-deepseek.json) for questions, SQL, results and code digests. This is one run on a small public benchmark, not a production accuracy claim.
+
+## Investigation regression tests (development edition)
+
+tests/test_investigation.py executes synthetic SQL and checks independently calculated month/category totals. Missing dates, duplicate orders/refunds, null amounts, unknown status and orphan refunds must block comparisons. Mock planners test observation-driven continuation, the five-step cap, repeated-query stopping, read-only repair budgets, evidence preservation after summary failure, bilingual behavior and exports. The original 20 business cases and their English counterparts remain. Mock success rates are not live-model accuracy.
+
+## Olist and bilingual RAG (2026-10-14)
+
+See [recorded evidence](evaluations/insightbridge-olist.json). DeepSeek V4 Flash passed 40/40 numeric/refusal checks across 20 bilingual business questions. The first exact-format comparison was 39/40 because one month column used first-day timestamps instead of YYYY-MM; the numeric results matched, and the comparator now accepts equivalent month labels.
+
+Four faults and a healthy control, each in both languages, passed 10/10 automated evidence gates after an invalid-citation fix. These gates require checks, a query, ETL inspection for faults, and resolvable references; they do not certify every narrative claim. Read explanations against the retained evidence.
+
+On a separate synthetic Chinese-only glossary, Top-3 retrieval was 20/20 for Chinese in both modes, and 0/20 lexical versus 20/20 hybrid for English. In the small end-to-end ablation (3 questions × 2 languages), lexical, hybrid and full-context variants each passed 6/6. This demonstrates cross-language retrieval improvement, not a business-answer accuracy advantage.
+
+Reproduce with `python -m evals.warehouse --live --app-storage storage`, `python -m evals.retrieval`, and `python -m evals.ablation`. Warehouse and ablation use paid provider calls; retrieval is local. The source snapshot has no reliable cost/refund data. Results are single runs, not production guarantees; unsupported generalizations can still appear in model explanations.

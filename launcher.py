@@ -66,6 +66,17 @@ def reserve_socket(start_port):
 
 
 def main():
+    # Source checkouts use their own dependencies, including optional local RAG.
+    # Existing desktop shortcuts may still point at a system/bundled Python.
+    if not getattr(sys, 'frozen', False) and os.name == 'nt':
+        project = Path(__file__).resolve().parent
+        venv = project / '.venv'
+        python = venv / 'Scripts' / ('pythonw.exe' if sys.stdout is None else 'python.exe')
+        if python.is_file() and Path(sys.prefix).resolve() != venv.resolve():
+            import subprocess
+            subprocess.Popen([str(python), str(project / 'launcher.py'), *sys.argv[1:]],
+                             cwd=str(project), creationflags=subprocess.CREATE_NO_WINDOW)
+            return 0
     parser = argparse.ArgumentParser()
     parser.add_argument('--data-dir', type=Path, default=default_storage())
     parser.add_argument('--port', type=int, default=8100)

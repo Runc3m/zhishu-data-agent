@@ -23,3 +23,19 @@ html[lang="en-US"] .nav-item { white-space: normal; }
 .context-reference summary { cursor:pointer; }
 .context-reference p { white-space:pre-wrap; overflow-wrap:anywhere; line-height:1.6; }
 .context-reference h4 { margin-bottom:6px; }
+/* Investigation evidence shares the existing workspace typography and colors. */
+.evidence-panel { margin: 14px 0; min-width: 0; }
+.investigation-evidence { border: 1px solid #dce8e4; border-radius: 12px; padding: 16px; background: #f8fbfa; }
+.investigation-evidence h4 { margin: 0 0 10px; }
+.evidence-query { margin: 8px 0; border-top: 1px solid #e3ebe8; padding: 10px 0; }
+.evidence-query summary { cursor: pointer; font-size: 13px; line-height: 1.6; overflow-wrap: anywhere; }
+.evidence-query small, .evidence-status { color: #586f68; }
+.evidence-query pre { overflow: auto; max-height: 220px; font-size: 12px; background: #eef3f1; padding: 12px; border-radius: 8px; }
+.evidence-query .table-scroll { max-height: 320px; overflow: auto; }
+.evidence-query td, .evidence-query th { padding: 8px; font-size: 12px; text-align: left; white-space: nowrap; }
+.analysis-mode { border: 1px solid #dce8e4; border-radius: 6px; padding: 5px; background: white; color: #35574b; max-width: 135px; }
+html[lang="en-US"] .brand { display: grid; grid-template-columns: 32px 1fr; gap: 5px 9px; }
+html[lang="en-US"] .brand-mark { width: 32px; height: 36px; grid-row: span 2; }
+html[lang="en-US"] .brand strong { font-size: 1.05rem; letter-spacing: .2px; }
+html[lang="en-US"] .brand .version { grid-column: 2; justify-self: start; margin: 0; }
+.pipeline-panel { margin-top: 24px; padding: 24px; background: var(--surface, white); border: 1px solid #dde5e2; border-radius: 16px; } .pipeline-panel details { padding: 12px 0; border-bottom: 1px solid #e7ebe9; } .pipeline-panel summary { cursor: pointer; overflow-wrap: anywhere; } .pipeline-panel pre,.evidence-query pre { overflow: auto; max-height: 420px; white-space: pre-wrap; overflow-wrap: anywhere; } .experiment-controls { margin-top: 20px; } .experiment-controls select { padding: 8px; margin: 8px; }

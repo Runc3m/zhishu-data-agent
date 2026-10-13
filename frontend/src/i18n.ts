@@ -8,7 +8,7 @@ export const getLanguage = () => language;
 export function setLanguage(value: Language) {
   language = value;
   document.documentElement.lang = value;
-  document.title = value === 'zh-CN' ? '知数 · Data Agent' : 'Zhishu · Data Agent';
+  document.title = value === 'zh-CN' ? '知数 · InsightBridge' : 'InsightBridge · Data Agent';
   listeners.forEach(listener => listener());
 }
 export function useLanguage() {

@@ -15,10 +15,14 @@ For example: amount fields are cents; net revenue is paid non-test order amounts
 
 Saving confirms the definitions. Only content changes increment the version; saving identical content does not. Each AI analysis uses the snapshot captured at its start for planning, repairs and summaries. Changing definitions does not rewrite historical analyses.
 
-Expand Business context vN beneath an analysis to inspect its original definitions. Markdown exports include the version and definitions too. Demo mode does not apply or claim to use business context. Unconfigured sources keep their normal analysis behavior.
+Expand Business context vN beneath an analysis to inspect its original definitions. Markdown exports include the version and definitions too. The original sales demo does not apply or claim to use business context; see below for the commerce investigation demo. Unconfigured sources keep their normal analysis behavior.
 
 ## Scope
 
 This is business-knowledge-assisted querying, not a semantic calculation engine. The model is instructed to clarify missing or conflicting definitions; verify important conclusions against executed SQL and results. Model guesses are never automatically saved as permanent knowledge. Cross-source querying remains unsupported. Remote AI receives these definitions: do not enter passwords or keys.
 
 See the [evaluation guide](evaluation.en.md) for validation methodology.
+
+## Retrieval and investigation
+
+The development edition combines BM25 with local multilingual E5 embeddings. Metric and relationship constraints remain mandatory; field descriptions are retrieved selectively. Full snapshots remain in history rather than being injected wholesale. Imported structured metrics are excluded after a context revision to avoid stale formulas. AI investigations use one immutable snapshot throughout. The original rule demo does not use business context; the new commerce demo executes its built-in definitions only and requires AI after definitions change.

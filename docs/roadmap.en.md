@@ -13,3 +13,7 @@ Source-level notes, column descriptions, metric definitions and table relationsh
 ## Further exploration
 
 Reusable templates, multi-sheet Excel, multi-file joins, saved reports and reruns. Priorities follow usage feedback; no release dates are committed.
+
+## Local development edition — InsightBridge
+
+Implemented local business retrieval, bounded AI investigation, read-only quality observations, evidence inspection/export, and a five-query synthetic commerce demo. Retains 20 bilingual business evaluation cases and adds investigation and abnormal-data regression tests. Live-model performance and a new Windows package remain to be validated.
