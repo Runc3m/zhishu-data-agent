@@ -269,15 +269,23 @@ def create_app(storage_path=None):
     def new_conversation(data: ConversationInput):
         return store.create_conversation(data.source_id)
 
+    @app.delete('/api/conversations/{cid}')
+    def delete_conversation(cid: str):
+        with guard:
+            if cid in active:
+                raise HTTPException(409, '这个对话正在分析，完成后才能删除。')
+            store.delete_conversation(cid)
+        return {'deleted': cid}
+
     @app.get('/api/conversations/{cid}/messages')
     def messages(cid: str):
         return store.messages(cid)
 
     @app.post('/api/conversations/{cid}/messages')
     def chat(cid: str, data: MessageInput):
-        store.conversation(cid)
         language = data.language or store.preferences()['language']
         with guard:
+            store.conversation(cid)
             if cid in active:
                 raise HTTPException(409, '这个对话正在分析，请稍后再发。')
             active.add(cid)

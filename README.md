@@ -1,37 +1,82 @@
-# 知数 InsightBridge
+<div align="center">
 
-一个支持中英文、在本地运行的数据分析助手。用自然语言提问，获得可检查的 SQL、图表与分析结论。
+# 知数 · InsightBridge
 
-[English](README.en.md) · [下载 Windows 应用](https://github.com/Runc3m/zhishu-data-agent/releases) · [使用指南](docs/usage.zh-CN.md) · [路线图](docs/roadmap.zh-CN.md)
+### 用业务语言提问，得到有依据的分析。
 
-![知数：根据合成零售订单与退款数据生成的地区净收入图](docs/assets/workspace.zh-CN.png)
+一个开源的中英文 AI 数据分析工作台。连接数据、理解指标、探索图表，再追问下一步。
 
-## 从问题到结果
+**简体中文** · [English](README.en.md)
 
-- **自然语言问数**：读取数据结构、制定查询计划、执行只读 SQL，在失败时进行有限修正。
-- **图表与查询放在一起**：柱状图、折线图、饼图、可排序数据表，以及实际执行的 SQL。
-- **本地数据工作空间**：导入 CSV，或连接 PostgreSQL / MySQL；数据源与分析历史自动保存。
-- **中英文切换**：界面、分析提示与建议问题随语言切换；已有对话和原始数据保持原样。
-- **轻量模型配置**：DeepSeek 只需填写 API Key；也支持兼容 Chat Completions 的服务及本地模型。
-- **理解业务定义**：为数据源配置字段、指标与关联说明；分析保留所用上下文版本，方便回看依据。
-- **无需密钥即可体验**：规则演示用预设查询分析实际执行的模拟记录，不调用模型。
-- **带走结果**：导出 CSV 查询结果和 Markdown 分析记录。
+[![Release](https://img.shields.io/github/v/release/Runc3m/zhishu-data-agent?color=278575)](https://github.com/Runc3m/zhishu-data-agent/releases/latest)
+[![Checks](https://github.com/Runc3m/zhishu-data-agent/actions/workflows/checks.yml/badge.svg)](https://github.com/Runc3m/zhishu-data-agent/actions/workflows/checks.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-适合个人分析师、运营人员与开发者探索数据、核对指标、准备分析材料。当前是单用户本地工具，不包含公网托管与团队账号。
+[**下载 Windows 应用**](https://github.com/Runc3m/zhishu-data-agent/releases/latest) · [快速开始](#快速开始) · [使用文档](docs/usage.zh-CN.md) · [反馈问题](https://github.com/Runc3m/zhishu-data-agent/issues)
+
+</div>
+
+![知数对 Olist 公开电商数据的实际分析：品类排名、交互图表与查询依据](docs/assets/analysis.zh-CN.png)
+
+*真实运行截图，使用 Olist 公开历史数据。数据需单独导入；AI 自由问答需配置模型。*
+
+## 从一个业务问题开始
+
+“哪个卖得最好”可能指销售额、销量，也可能指利润。知数会结合数据与业务说明，给出比较口径、查询结果和解释；你可以继续追问，也可以检查背后的 SQL。
+
+| 你想解决的问题 | 可以这样问 | 知数帮你做什么 |
+| --- | --- | --- |
+| 看清销售表现 | 哪个品类卖得最好？销售额和销量的排名一样吗？ | 对比指标、排名与趋势，说明时间范围和统计口径 |
+| 读懂分析结果 | 看不懂，解释一下。下一步该关注什么？ | 用已有查询证据解释结果，提出待验证的建议与缺失信息 |
+| 统一指标定义 | 已交付商品成交额包含运费吗？怎么算的？ | 检索已配置的业务说明，结合字段与指标定义回答 |
+| 排查报表异常 | 调查日报表是否有数据问题，沿处理链路验证原因 | 在已注册的 Olist 管道中查看 ETL、表级血缘和加载记录，执行核验 |
+
+适合个人分析师、运营人员和开发者做数据探索、指标核对与分析初稿。当前是本地单用户工作台。
+
+## 一次分析，可以继续往下问
+
+以 Olist 历史电商数据为例：
+
+1. **“哪个卖得最好？”** 按已交付商品成交额比较，`health_beauty` 为 **1,233,131.72 BRL**；按售出件数比较，`bed_bath_table` 为 **10,953 件**。
+2. **“看不懂，解释一下。”** 金额最高与件数最多可以是不同品类；商品成交额不包含运费，也不等于利润。
+3. **“我该优先经营什么品类？”** 基于已查结果给出候选方向，并指出还需要成本、库存等信息才能进一步判断。
+
+前两项数值可由公开数据与参考 SQL 核对。第三项属于辅助分析，不能从销售排名直接推出经营收益。[查看实测问题与结果](docs/evaluations/conversational-bi.json)
+
+## 为什么用知数
+
+- **从问题到分析报告。** 支持宽泛提问、多查询分析和解释追问，结果包含结论、关键发现、待验证建议与口径局限。
+- **图表随数据选择。** 12 种图形与指标视图，按返回字段提供兼容选项；支持多系列趋势、指标切换、缩放、图片和逐面板 CSV 导出。
+- **让 AI 参考你的业务定义。** 每个数据源可配置字段、指标和关联说明。检索业务片段，记录上下文版本，方便回看答案依据。
+- **每一步可以检查。** 展开实际执行的只读 SQL、结果、检索片段和调查步骤；分析记录可导出 Markdown。
+- **本地工作空间，中英双语。** 保存数据源和聊天记录，支持删除单个会话。默认简体中文，右上角切换 English；自选模型服务。
+
+**图表视图：** 指标卡 · 柱状图 · 条形图 · 折线图 · 面积图 · 堆叠柱状图 · 饼图 · 环形图 · 散点图 · 热力图 · 矩形树图 · 直方图。
 
 ## 快速开始
 
-### Windows 用户
+### Windows：下载，解压，打开
 
-1. 从 [Releases](https://github.com/Runc3m/zhishu-data-agent/releases) 下载最新的 `Zhishu-v1.1.0-windows-x64.zip`。
-2. 完整解压，打开 `Zhishu` 文件夹，双击 `Zhishu.exe`。
-3. 浏览器会打开分析工作空间。点击建议问题，即可体验内置销售数据。
+1. [下载最新 Windows x64 ZIP](https://github.com/Runc3m/zhishu-data-agent/releases/latest)，完整解压后双击 `Zhishu.exe`，无需安装 Python 或 Node.js。
+2. 浏览器打开本地工作台。选择“销售演示数据”或“电商调查演示”，点击建议问题，**无需 API Key 即可体验规则演示**。
+3. 想自由提问：打开“模型设置”，配置自己的 DeepSeek Key，或兼容 Chat Completions 的模型服务；也可连接兼容的本地模型。
 
-不需要安装 Python 或 Node.js。使用时保留启动中心，可最小化；结束时点击“退出知数”。安装、升级与存储位置见[使用指南](docs/usage.zh-CN.md)。
+规则演示使用预设问题和合成数据，不调用大模型。AI 模式使用你配置的服务，可能产生 API 费用。[安装与升级](docs/usage.zh-CN.md) · [模型配置](docs/models.zh-CN.md)
 
-### 开发者
+### 带上自己的数据
 
-需要 Windows、Python 3.13、Node.js 22+ 和 pnpm 11.19.0。
+| 数据来源 | 使用方式 |
+| --- | --- |
+| CSV | 上传一个文件，预览字段后开始分析 |
+| 多 CSV ZIP | 上传数据包，在同一 DuckDB 数据源内查询多张表 |
+| PostgreSQL / MySQL | 用只读账号连接数据库 |
+| Olist 公开电商数据 | 上传官方九文件 ZIP，生成 13 张原始、清洗、事实、报表与加载记录表 |
+
+Olist 包含 **99,441 笔订单**，覆盖 2016–2018 年，金额单位 BRL。数据单独下载，遵循其 CC BY-NC-SA 4.0 许可；不随应用分发。[官方数据](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce) · [导入与调查指南](docs/warehouse.zh-CN.md)
+
+### 开发者：从源码运行
+
+Windows、Python 3.13、Node.js 22+、pnpm 11.19.0：
 
 ```powershell
 git clone https://github.com/Runc3m/zhishu-data-agent.git
@@ -39,50 +84,33 @@ cd zhishu-data-agent
 .\start.ps1 -Rebuild
 ```
 
-打开脚本显示的本地地址。测试、架构与打包见[开发指南](docs/development.zh-CN.md)。
-
-## 一个使用示例
-
-选择“销售演示数据”，提问“每月销售趋势”，接着问“只看第二季度”，再试试“那利润呢”。可以切换图表类型、查看 SQL、导出结果。
-
-分析自己的 CSV 时，先预览字段；自由提问需要在“模型设置”启用 AI。详细步骤见[模型配置](docs/models.zh-CN.md)。
-
-文件和历史记录存储在本机。启用远程 AI 后，问题、数据结构、已配置的业务上下文、最近对话与最多 30 行查询结果会发送给所选模型服务，并使用该服务的 API 额度。
-
-业务口径如何配置、如何核验结果，见[业务上下文](docs/business-context.zh-CN.md)与[评测说明](docs/evaluation.zh-CN.md)。
-
-## 文档与参与
-
-[使用指南](docs/usage.zh-CN.md) · [模型配置](docs/models.zh-CN.md) · [开发构建](docs/development.zh-CN.md) · [常见问题](docs/faq.zh-CN.md) · [贡献指南](CONTRIBUTING.md) · [路线图](docs/roadmap.zh-CN.md) · [更新日志](CHANGELOG.md)
-
-欢迎提交可复现的问题、改进建议与 Pull Request。自有代码使用 [MIT 许可证](LICENSE)；依赖许可与产品思路致谢见[第三方说明](THIRD_PARTY_NOTICES.md)。
-
-
-## 本地开发版：知数 InsightBridge
-
-英文产品名为 **InsightBridge**，中文继续使用“知数”。现有 GitHub 地址、存储目录、健康检查标识和历史发行包文件名保持兼容；本轮功能尚未发布为新的 Windows 安装包。
-
-- **双语业务检索**：复用 FastEmbed / ONNX Runtime 运行本地 multilingual-e5-small，与 BM25 通过 RRF 合并排序。知识覆盖字段、指标、表结构和 ETL，最多返回 8 个检索片段；另保留口径、排除条件和关联约束。未安装模型时界面明确显示关键词降级，不在提问时自动下载。完整业务快照供历史审计使用，不再整份注入提示词。
-- **真实数据仓库**：支持多 CSV 的 ZIP 数据包（压缩后 256 MB、解压后 512 MB、最多 20 个文件）。识别 Olist 九文件格式，使用 DuckDB 建立原始层、清洗订单、订单事实、每日报表与加载记录。日期保持 2016–2018、币种 BRL，无成本和退款时拒绝利润或净收入问题。
-- **SQL 链路调查**：对已注册的 Olist 管道提供 SQLGlot 解析的表级血缘、实际 ETL、加载记录、知识检索与只读 SQL 工具，最多 8 次工具行动和 2 次修复。独立检查关联金额、漏数、报表对账与刷新版本；不等于任意 ETL 语言解析或源系统完整性保证。
-- **多步调查**：输入框可选择自动判断、单次查询或多步调查。AI 调查最多执行 5 条成功分析查询、共 2 次修复；重复查询会停止。另有最多 3 张表的只读质量观察。180 秒软预算在下一步开始前检查，正在执行的调用可能使总耗时超过预算。
-- **可检查的依据**：展开每一步查看实际 SQL、结果和截断状态；业务片段、质量观察、核对结果与停止原因保存进历史，并包含在 Markdown 导出中。
-- **更准确的总结范围**：提供所有已返回行的数值概况及前 30 行样本；返回片段不是整个数据库，求总体指标仍需聚合 SQL。数字列机械求和不代表指标具有可加性。
-
-导入 Olist 后首次打开优先选择真实数据；未导入时保留“电商调查演示”。演示卡可运行 2026 年 8 月对比 7 月的五步合成调查，净销售额为 5,890 → 4,960 元，总变化 -930 元。该演示仍是教学数据，不能当作真实模型成绩。
-
-真实数据和本地检索模型安装（首次需要联网；使用预训练模型，无需训练）：
+源码版可选安装本地多语言语义检索：
 
 ```powershell
 .\.venv\Scripts\python -m pip install -r requirements-rag.txt
 .\.venv\Scripts\python -m scripts.setup_warehouse --download --embeddings
-.\start.ps1
 ```
 
-也可以在“添加数据源 → ZIP 数据包”上传已下载的 Olist ZIP，或使用 `--archive 文件路径` 代替 `--download`。在数据源页面展开“数据处理链路”，选择正常对照或四类故障以创建独立实验副本。故障标签不会进入模型上下文，原始数据库不会被修改。数据、模型和本地密钥不提交到 Git。Olist 是 CC BY-NC-SA 4.0 的匿名历史数据，见[官方来源](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce)。
+第二条命令下载 Olist 和预训练检索模型，无需训练。Windows 发布包使用关键词检索，不包含语义模型；源码版安装完成后可使用 BM25 + 多语言向量混合检索。界面会显示实际检索模式。[开发指南](docs/development.zh-CN.md)
 
-真实模型评测：`python -m evals.warehouse --live --app-storage storage`；离线检索评测：`python -m evals.retrieval`。前者会消耗已配置服务商的额度，并发送选中公开数据的查询结果；结果保存在 `evaluation-results/`。故障结论需人工复核，自动证据门槛不等于因果解释正确率。
+## 答案依据与使用边界
 
-另外两张卡演示“退款率”口径澄清和 9 月尚未导入的边界。该规则演示仅支持卡片问题；若修改演示业务定义，需要启用 AI 才会按新定义查询。普通“销售演示数据”保留原有功能。
+知数先读取数据结构与业务上下文，检索相关定义，再规划并校验只读查询。分析结果保留证据，失败时只做有限修正。
 
-AI 调查适用于自己的 CSV 或数据库，但自动检查只覆盖部分类型字段，不是完整数据质量审计；日期起止不能证明导入完整。模型生成的核对与原因解释仍需检查证据。真实模型效果需另行使用配置的模型评测，本地模拟模型测试不能代表真实模型准确率。
+- **评测公开。** 提供中英文业务标准题、Olist 调查与对话测试记录。对话测试的 6 个案例通过各自检查项，属于小规模冒烟测试，不代表所有业务问题的准确率。[评测方法与记录](docs/evaluation.zh-CN.md)
+- **数据存储在本机。** 启用远程 AI 时，问题、结构、业务片段、近期对话及有限查询结果/统计摘要会发送至所选模型服务；本地运行不意味着远程 AI 零数据传输。[模型与数据说明](docs/models.zh-CN.md)
+- **范围明确。** 暂不提供团队账号、行级权限、定时刷新或公网托管；不支持 Excel 直接导入和跨数据源查询。血缘排查限已注册管道，建议与模型结论需要核对。
+
+## 参与，一起把真实问题解决好
+
+遇到问题时，欢迎提交脱敏的字段结构、提问、预期结果和实际表现。不要上传 API Key 或业务原始数据。你也可以贡献案例、翻译与连接器；如果知数对你有用，欢迎 Star，方便持续关注更新。
+
+[使用指南](docs/usage.zh-CN.md) · [业务上下文](docs/business-context.zh-CN.md) · [常见问题](docs/faq.zh-CN.md) · [路线图](docs/roadmap.zh-CN.md) · [更新日志](CHANGELOG.md) · [贡献指南](CONTRIBUTING.md)
+
+## 构建在成熟工具之上
+
+React + Apache ECharts 提供交互界面；FastAPI 编排分析；DuckDB 执行本地查询；SQLGlot 解析与校验 SQL；可选 FastEmbed / ONNX Runtime 提供本地多语言检索。
+
+产品设计参考 [WrenAI](https://github.com/Canner/WrenAI)、[Data Formulator](https://github.com/microsoft/data-formulator) 与 [DataHub Analytics Agent](https://github.com/datahub-project/analytics-agent)。知数是独立项目，不是上述项目的官方产品。
+
+自有代码采用 [MIT](LICENSE)；依赖、可选模型和示例数据分别遵循各自许可。[第三方说明](THIRD_PARTY_NOTICES.md)

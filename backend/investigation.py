@@ -18,7 +18,7 @@ def investigate_ai(engines, source, settings, prompts, question, language, model
     quality = inspect_source(engines, source)
     messages = [dict(p) for p in prompts]
     messages[0]['content'] += '''\nInvestigation mode: at most FIVE successful read-only queries and TWO total repairs.
-Plan ONE query at a time. After observing results, choose the next query or return sql:null to stop.
+Override the general analysis protocol: always action:query, with sql/explanation/chart_type only; never return queries arrays. Plan ONE query at a time. After observing results, choose the next query or return sql:null to stop.
 Check period completeness first; ask for dates/definitions when unclear. Compare like-for-like periods.
 Use aggregate queries for population claims; decompose changes, then investigate the largest contributor.
 Reconcile category contributions against independently queried totals. Check joins at their actual grain.

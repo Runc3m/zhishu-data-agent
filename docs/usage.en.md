@@ -25,9 +25,9 @@ Packaged storage is `%LOCALAPPDATA%\ZhishuDataAgent\storage`; source runs use th
 Quit Zhishu and back up the entire storage directory, including databases and `local.key`, before updating. Extract and launch the new version without overwriting or deleting storage. Share the original Release ZIP, not your personal data directory.
 
 
-## Local development edition: InsightBridge / 知数
+## v1.2.0: InsightBridge / 知数
 
-The English product name is **InsightBridge**; the Chinese name remains 知数. Existing repository URLs, storage paths, health-check IDs and historical release filenames remain compatible. These changes have not yet been published as a new Windows package.
+The English product name is **InsightBridge**; the Chinese name remains 知数. Existing repository URLs, storage paths, health-check IDs and package filenames remain compatible. The v1.2.0 Windows package includes conversational BI, ZIP imports, pipeline investigations and keyword retrieval. Local embeddings are an optional source-edition setup.
 
 - **Bilingual retrieval**: FastEmbed / ONNX Runtime runs pretrained multilingual-e5-small locally; RRF combines semantic and BM25 rankings. Retrieve fields, metrics, schemas and ETL, preserving mandatory metric exclusions and relationship constraints. Missing embeddings visibly fall back to keywords. No request-time downloads; complete business snapshots are retained for audit rather than injected wholesale.
 - **Investigation**: choose Automatic, Single query or Investigation beside the input. AI investigations allow five successful analytical queries and two repairs in total, and stop repeated queries. Up to three additional read-only source diagnostics run first. A soft 180-second budget is checked before starting another step; in-flight calls may exceed it.
@@ -43,3 +43,18 @@ For your own CSV or database, enable AI. Automatic diagnostics inspect only sele
 ## Olist warehouse and experiments
 
 Install `requirements-rag.txt`, then run `python -m scripts.setup_warehouse --download --embeddings`, or upload the official Olist ZIP. The warehouse has 13 tables and 99,441 orders, denominated in BRL. The data page shows table lineage and actual ETL SQL and creates isolated control/fanout/missing-date/status-filter/stale-mart copies. Select a copy and choose Investigation. Registered pipelines allow 8 tool actions and 2 repairs with independent checks and citation audits.
+
+## Broad questions, explanations and decision support
+
+- Ask “Which sells best?” to compare a grounded amount metric with volume/orders/trends. The answer states assumed dimensions and scope.
+- Ask “Explain this simply” to reuse saved evidence and simplify terminology.
+- Ask “What should I prioritize?” for conditional actions, risks to validate and next measures, without promised profit or uplift.
+- Switch compatible visual types and measures per panel. Two-dimensional categories support heatmaps; multi-category time series support separate lines. Each panel exports its own actual CSV.
+
+Negative values cannot be pie slices. A Top-N pie describes only its returned subset. Histograms describe returned rows, not necessarily individual orders. Stack only additive components with the same unit.
+
+## Delete a conversation
+
+In Recent analyses, click the trash icon next to a conversation, then Confirm deletion. This removes that conversation’s messages, charts and query results only. Other conversations, sources, business definitions and API settings are retained. Deletion cannot be undone; use Export analysis first if you need a copy. Active analyses cannot be deleted.
+
+[Olist / RAG setup details](warehouse.en.md)

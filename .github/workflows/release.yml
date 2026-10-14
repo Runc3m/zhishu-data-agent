@@ -28,20 +28,21 @@ jobs:
         working-directory: frontend
       - run: pnpm build
         working-directory: frontend
+      - run: pnpm test:charts
+        working-directory: frontend
       - run: python -m venv .venv
       - run: .\.venv\Scripts\python -m pip install -r requirements.lock.txt
       - run: .\.venv\Scripts\python -m pytest -q
       - run: .\build-windows.ps1
       - run: .\.venv\Scripts\python tests/smoke_windows.py release/Zhishu/Zhishu.exe
-      - name: Verify upgrade from v1.0.0
-        if: github.ref_name == 'v1.1.0'
+      - name: Verify upgrade from v1.1.0
         env:
           GH_TOKEN: ${{ github.token }}
         shell: pwsh
         run: |
-          gh release download v1.0.0 --pattern '*.zip' --dir build/previous-release
+          gh release download v1.1.0 --pattern '*.zip' --dir build/previous-release
           if ($LASTEXITCODE -ne 0) { throw 'Could not download previous release.' }
-          Expand-Archive -LiteralPath build/previous-release/Zhishu-v1.0.0-windows-x64.zip -DestinationPath build/previous-release
+          Expand-Archive -LiteralPath build/previous-release/Zhishu-v1.1.0-windows-x64.zip -DestinationPath build/previous-release
           .\.venv\Scripts\python tests/upgrade_windows.py build/previous-release/Zhishu/Zhishu.exe release/Zhishu/Zhishu.exe
           if ($LASTEXITCODE -ne 0) { throw 'Upgrade verification failed.' }
       - name: Create verified draft

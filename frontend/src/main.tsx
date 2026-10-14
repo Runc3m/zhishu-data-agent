@@ -3,14 +3,12 @@ import {BusinessContextEditor, ContextReference, type BusinessContext} from './B
 import {EvidencePanel, type EvidencePayload} from './EvidencePanel';
 import React, { useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { ArrowDownToLine, ArrowRight, ArrowUp, BarChart3, Check, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, Code2, Copy, Database, FileSpreadsheet, FolderOpen, History, Layers3, LineChart, Loader2, Menu, MessageSquare, Plus, Send, Settings2, ShieldCheck, Sparkles, Table2, UploadCloud, X, Zap, AlertCircle, PlugZap, CircleHelp } from 'lucide-react';
-import * as echarts from 'echarts/core';
-import { BarChart, LineChart as ELineChart, PieChart } from 'echarts/charts';
-import { GridComponent, TooltipComponent, LegendComponent } from 'echarts/components';
-import { CanvasRenderer } from 'echarts/renderers';
+import { ArrowDownToLine, ArrowRight, ArrowUp, BarChart3, Check, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, Code2, Copy, Database, FileSpreadsheet, FolderOpen, History, Layers3, LineChart, Loader2, Menu, MessageSquare, Plus, Send, Settings2, ShieldCheck, Sparkles, Table2, Trash2, UploadCloud, X, Zap, AlertCircle, PlugZap, CircleHelp } from 'lucide-react';
+import {BIChart} from './BIChart';
+import {AnalysisReport} from './AnalysisReport';
 import './style.css';
 import {PipelinePanel} from './PipelinePanel';
-echarts.use([BarChart, ELineChart, PieChart, GridComponent, TooltipComponent, LegendComponent, CanvasRenderer]);
+
 type Source = {
     id: string;
     name: string;
@@ -43,6 +41,10 @@ type Conversation = {
     updated_at: string;
 };
 type Result = EvidencePayload & {
+    report?: {conclusion: string; findings: string[]; actions: string[]; limitations: string[]; followups: string[]};
+    panels?: (Result & {title: string; step: number})[];
+    response_kind?: string;
+    based_on_message_id?: string;
     context_version?: number;
     business_context?: BusinessContext;
     answer: string;
@@ -111,37 +113,6 @@ function DataTable({ result }: {
     const pages = Math.max(1, Math.ceil(rows.length / 10));
     return <><div className="table-scroll"><table><thead><tr><th className="row-index">#</th>{result.columns.map((c, i) => <th key={i}><button onClick={() => { setSort({ index: i, direction: sort?.index === i ? -sort.direction : 1 }); setPage(0); }}>{c}<ChevronDown size={12}/></button></th>)}</tr></thead><tbody>{rows.slice(page * 10, page * 10 + 10).map((row, i) => <tr key={i}><td className="row-index">{page * 10 + i + 1}</td>{row.map((v, j) => <td key={j} className={typeof v === 'number' ? 'numeric' : ''} title={String(v ?? '')}>{formatValue(v)}</td>)}</tr>)}</tbody></table>{!rows.length && <div className="empty-small">{t("没有符合条件的数据")}</div>}</div><div className="table-footer"><span>{rows.length}{t("行")}{result.truncated && t("· 已截断至 500 行")}</span><div><button className="icon-button" aria-label={t("上一页")} disabled={page === 0} onClick={() => setPage(page - 1)}><ChevronLeft size={16}/></button><span>{page + 1} / {pages}</span><button className="icon-button" aria-label={t("下一页")} disabled={page + 1 >= pages} onClick={() => setPage(page + 1)}><ChevronRight size={16}/></button></div></div></>;
 }
-function Chart({ result, type }: {
-    result: Result;
-    type: string;
-}) {
-    const language = useLanguage();
-    const ref = useRef<HTMLDivElement>(null);
-    useEffect(() => {
-        if (!ref.current || !result.chart)
-            return;
-        const instance = echarts.init(ref.current);
-        const spec = result.chart;
-        const x = result.columns.indexOf(spec.x);
-        const ys = spec.y.map(y => result.columns.indexOf(y));
-        const rows = result.rows.slice(0, spec.limit);
-        const colors = ['#168773', '#7aaac1', '#dbab5b'];
-        const base = { color: colors, textStyle: { fontFamily: 'Inter, "Microsoft YaHei", sans-serif' },
-            tooltip: { trigger: type === 'pie' ? 'item' : 'axis', renderMode: 'richText', backgroundColor: '#fff', borderColor: '#e5e9e9' },
-            legend: { bottom: 0, icon: 'circle', itemWidth: 8, itemHeight: 8, textStyle: { color: '#728080' } } };
-        instance.setOption(type === 'pie' ? { ...base, series: [{ type: 'pie', radius: ['43%', '67%'], center: ['50%', '45%'], avoidLabelOverlap: true, label: { formatter: '{b}: {d}%', color: '#526565' }, data: rows.map(r => ({ name: String(r[x]), value: r[ys[0]] ?? 0 })) }] } : {
-            ...base, grid: { left: 18, right: 20, top: 24, bottom: 42, containLabel: true },
-            xAxis: { type: 'category', data: rows.map(r => String(r[x])), axisLine: { lineStyle: { color: '#e5ebeb' } }, axisTick: { show: false }, axisLabel: { color: '#728080', hideOverlap: true } },
-            yAxis: { type: 'value', splitLine: { lineStyle: { color: '#eff2f2', type: 'dashed' } }, axisLabel: { color: '#728080', formatter: (v: number) => new Intl.NumberFormat(language, {notation: 'compact', maximumFractionDigits: 1}).format(v) } },
-            series: ys.map((y, i) => ({ name: spec.y[i], type, data: rows.map(r => r[y]), barMaxWidth: 48, symbolSize: 6, smooth: false,
-                itemStyle: { borderRadius: type === 'bar' ? [5, 5, 0, 0] : 0 }, ...(type === 'line' ? { areaStyle: { opacity: .06 } } : {}) })),
-        });
-        const observer = new ResizeObserver(() => instance.resize());
-        observer.observe(ref.current);
-        return () => { observer.disconnect(); instance.dispose(); };
-    }, [result, type, language]);
-    return <div className="chart" ref={ref} role="img" aria-label={t("{0}与{1}的{2}", result.chart?.x, result.chart?.y.join('、'), type === 'line' ? t("折线图") : type === 'pie' ? t("饼图") : t("柱状图"))}/>;
-}
 function ResultCard({ message, cid, notify }: {
     message: Message;
     cid: string;
@@ -149,7 +120,11 @@ function ResultCard({ message, cid, notify }: {
 }) {
     const result = message.result!;
     const [tab, setTab] = useState(result.chart ? 'chart' : 'data');
-    const [type, setType] = useState(result.chart?.type || 'bar');
+    function download() {
+        const escaped = (v: unknown) => { const raw = String(v ?? ''); const safe = typeof v === 'string' && /^[\s]*[=+@-]/.test(raw) ? "'" + raw : raw; return '"' + safe.replaceAll('"', '""') + '"'; };
+        const blob = new Blob(['\ufeff' + [result.columns, ...result.rows].map(row => row.map(escaped).join(',')).join('\r\n')], {type: 'text/csv;charset=utf-8'});
+        const url = URL.createObjectURL(blob), link = document.createElement('a'); link.href = url; link.download = 'insightbridge-result.csv'; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
     async function copy() {
         try {
             await navigator.clipboard.writeText(result.executed_sql || result.sql || '');
@@ -165,8 +140,8 @@ function ResultCard({ message, cid, notify }: {
     {result.chart && <button role="tab" aria-selected={tab === 'chart'} className={tab === 'chart' ? 'active' : ''} onClick={() => setTab('chart')}><BarChart3 size={15}/>{t("图表")}</button>}
     <button role="tab" aria-selected={tab === 'data'} className={tab === 'data' ? 'active' : ''} onClick={() => setTab('data')}><Table2 size={15}/>{t("数据")}<span className="count">{result.row_count}</span></button>
     <button role="tab" aria-selected={tab === 'sql'} className={tab === 'sql' ? 'active' : ''} onClick={() => setTab('sql')}><Code2 size={15}/>SQL</button></div>
-    <a className="icon-button" title={t("下载 CSV")} aria-label={t("下载查询结果 CSV")} href={`/api/conversations/${cid}/messages/${message.id}/csv`}><ArrowDownToLine size={16}/></a></div>
-    {tab === 'chart' && <><div className="chart-heading"><span>{result.chart?.y.join(' / ')}<small>{t("按")}{result.chart?.x}</small></span><select aria-label={t("图表类型")} value={type} onChange={e => setType(e.target.value)}><option value="bar">{t("柱状图")}</option><option value="line">{t("折线图")}</option><option value="pie">{t("饼图")}</option></select></div><Chart result={result} type={type}/><div className="chart-note">{result.rows.length > 50 ? t("图表显示前 50 组，完整结果见数据视图") : t("图表基于本次实际查询结果")}</div></>}
+    <button className="icon-button" title={t("下载 CSV")} aria-label={t("下载查询结果 CSV")} onClick={download}><ArrowDownToLine size={16}/></button></div>
+    {tab === 'chart' && <BIChart result={result}/>}
     {tab === 'data' && <DataTable result={result}/>}
     {tab === 'sql' && <div className="sql-panel"><div><span>{result.mode === 'demo' ? t("规则生成") : t("AI 生成")}{t("· 实际执行 SQL（含返回行数限制）")}</span><button className="text-button" onClick={copy}><Copy size={14}/>{t("复制")}</button></div><pre><code>{result.executed_sql || result.sql}</code></pre></div>}
     <div className="result-footer"><ShieldCheck size={13}/><span>{t("只读查询")}</span><span className="dot"/><span>{result.duration_ms} ms</span>{result.truncated && <span className="warning-text">{t("最多展示 500 行")}</span>}</div></div>;
@@ -279,6 +254,7 @@ function App() {
     }
     const [sources, setSources] = useState<Source[]>([]), [sourceId, setSourceId] = useState('demo-commerce');
     const [analysisMode, setAnalysisMode] = useState('auto');
+    const [deleteTarget, setDeleteTarget] = useState<Conversation | null>(null), [deleting, setDeleting] = useState(false);
     const [settings, setSettings] = useState<Settings | null>(null), [conversations, setConversations] = useState<Conversation[]>([]);
     const [cid, setCid] = useState(''), [messages, setMessages] = useState<Message[]>([]), [view, setView] = useState('chat');
     const [modal, setModal] = useState(''), [input, setInput] = useState(''), [busy, setBusy] = useState(false);
@@ -343,6 +319,20 @@ function App() {
         return () => { current = false; };
     }, [view, sourceId, selectedTable]);
     function reset(next = sourceId) { loadSequence.current++; setCid(''); setMessages([]); setSourceId(next); setSteps([]); setInput(''); setView('chat'); setMobileMenu(false); textarea.current?.focus(); }
+    async function deleteConversation() {
+        if (!deleteTarget || deleting || busy || chatGuard.current) return;
+        setDeleting(true);
+        const target = deleteTarget;
+        ++loadSequence.current;
+        try {
+            await api(`/conversations/${target.id}`, {method: 'DELETE'});
+            setConversations(previous => previous.filter(c => c.id !== target.id));
+            if (cid === target.id) reset();
+            setDeleteTarget(null);
+            notify(t("聊天记录已删除"));
+        } catch (error) { notify((error as Error).message); }
+        finally { setDeleting(false); }
+    }
     async function openConversation(c: Conversation) {
         if (chatGuard.current || busy)
             return;
@@ -447,16 +437,16 @@ function App() {
     <aside className={'sidebar ' + (mobileMenu ? 'open' : '')}><div className="brand"><div className="brand-mark"><BarChart3 size={22}/></div><div><strong>{t("知数")}</strong><span>DATA AGENT</span></div><span className="version">{__APP_VERSION__}</span></div>
       <button className="new-analysis" disabled={busy} onClick={() => reset()}><Plus size={18}/>{t("新建分析")}<span>＋</span></button>
       <div className="nav-section-label">{t("工作空间")}</div><nav><button className={view === 'chat' ? 'nav-item active' : 'nav-item'} disabled={busy} onClick={() => { setView('chat'); setMobileMenu(false); }}><MessageSquare size={18}/>{t("对话分析")}</button><button className={view === 'data' ? 'nav-item active' : 'nav-item'} disabled={busy} onClick={() => { setView('data'); setMobileMenu(false); }}><Database size={18}/>{t("数据源")}<span className="nav-count">{sources.length}</span></button></nav>
-      <div className="nav-section-label history-label">{t("最近分析")}<History size={13}/></div><div className="history-list">{conversations.length ? conversations.map(c => <button title={c.title} key={c.id} className={cid === c.id ? 'history-item selected' : 'history-item'} disabled={busy} onClick={() => void openConversation(c)}><MessageSquare size={14}/><span>{c.title}</span></button>) : <p className="history-empty">{t("你的分析会自动保存在这里")}</p>}</div>
+      <div className="nav-section-label history-label">{t("最近分析")}<History size={13}/></div><div className="history-list">{conversations.length ? conversations.map(c => <div className="history-row" key={c.id}><button title={c.title} className={cid === c.id ? 'history-item selected' : 'history-item'} disabled={busy || deleting} onClick={() => void openConversation(c)}><MessageSquare size={14}/><span>{c.title}</span></button><button className="history-delete" title={t("删除聊天记录")} aria-label={t("删除聊天记录：{0}", c.title)} disabled={busy || deleting} onClick={() => setDeleteTarget(c)}><Trash2 size={14}/></button></div>) : <p className="history-empty">{t("你的分析会自动保存在这里")}</p>}</div>
       <div className="sidebar-bottom"><div className="local-status"><span className="status-led"/><div>{t("本地工作空间")}<small>{t("文件与对话保存在本机")}</small></div></div><button className="nav-item settings-nav" disabled={busy} onClick={() => setModal('settings')}><Settings2 size={18}/>{t("模型设置")}<ChevronRight size={15}/></button><div className="profile"><div className="avatar">{t("我")}</div><div>{t("我的工作台")}<small>{t("个人空间")}</small></div><ShieldCheck size={16}/></div></div>
     </aside>
     <div className="main-shell"><header className="topbar"><div className="breadcrumb"><button className="icon-button menu-toggle" aria-label={t("打开导航")} onClick={() => setMobileMenu(true)}><Menu size={20}/></button><FolderOpen size={17}/><span>{t("工作空间")}</span><span className="slash">/</span><strong>{view === 'chat' ? t("对话分析") : t("数据源")}</strong></div><div className="top-actions"><select className="language-select" aria-label="Language / 语言" value={language} disabled={languageSaving} onChange={e => void changeLanguage(e.target.value as Language)}><option value="zh-CN">简体中文</option><option value="en-US">English</option></select><button className={'mode-badge ' + (settings?.mode === 'llm' ? 'ai' : '')} disabled={busy} onClick={() => setModal('settings')}><span className="status-led"/>{settings?.mode === 'llm' ? t("AI 分析模式") : t("规则演示模式")}</button><button className="icon-button" title={t("使用说明")} aria-label={t("使用说明")} onClick={() => setModal('help')}><CircleHelp size={19}/></button></div></header>
     {view === 'chat' ? <><div className="analysis-bar"><div><span className="eyebrow">ANALYSIS</span><h1>{cid ? conversations.find(c => c.id === cid)?.title || t("进行中的分析") : t("新的分析")}</h1></div><div className="analysis-actions"><div className="source-select"><Database size={15}/><select aria-label={t("选择数据源")} value={sourceId} disabled={busy} onChange={e => reset(e.target.value)}>{displaySources.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select></div><button className={'icon-button schema-toggle ' + (showSchema ? 'selected' : '')} title={t("查看表结构")} aria-label={t("切换表结构面板")} onClick={() => setShowSchema(!showSchema)}><Table2 size={18}/></button></div></div>
     <div className="analysis-layout"><main className="chat-column"><div className="chat-scroll">
-      {!messages.length ? <div className="welcome"><div className="welcome-symbol"><Sparkles size={28}/></div><div className="welcome-kicker">{t("从一个好问题开始")}</div><h2>{t("让数据，回答你的问题。")}</h2><p>{t("选择数据源，直接提问。结论、图表和查询过程都在这里。")}</p><div className="current-data"><div className="data-icon"><Database size={20}/></div><div><strong>{source?.name}</strong><span>{source?.tables.length}{t("张表")}{primaryTable?.rows != null ? t(" · {0} 条记录", primaryTable.rows.toLocaleString(getLanguage())) : ''}</span></div><span className="tag">{source?.experiment ? t("实验副本") : source?.dataset === 'olist' ? t("真实历史数据") : source?.kind === 'demo' ? t("模拟数据") : source?.kind === 'csv' ? 'CSV' : t("只读连接")}</span></div><div className="suggestions">{suggestions.map(s => <button key={s.question} disabled={busy} onClick={() => void send(s.question)}><span className="suggestion-top"><s.icon size={17}/>{s.label}</span><span>{s.question}<ArrowRight size={16}/></span></button>)}</div><div className="welcome-foot"><ShieldCheck size={14}/>{t("每一条结论，都可以查看背后的 SQL")}</div></div> : <div className="message-list">{messages.map(m => <div key={m.id} className={'message ' + m.role}><div className={'message-avatar ' + (m.role === 'user' ? 'person' : '')}>{m.role === 'user' ? t("我") : <Sparkles size={18}/>}</div><div className="message-body"><div className="message-name">{m.role === 'user' ? t("你") : t("知数")}{m.role === 'assistant' && <span>{m.result?.mode === 'demo' ? t("规则演示") : t("分析助手")}</span>}</div><div className={'message-text ' + (m.result?.error ? 'error-text' : '')}>{m.content}</div>{m.result?.business_context && <ContextReference context={m.result.business_context}/>}{m.result && <EvidencePanel result={m.result}/>}
-{m.result?.notice && <div className="result-notice">{m.result.notice}</div>}{m.result?.sql && <ResultCard message={m} cid={cid} notify={notify}/>}</div></div>)}
+      {!messages.length ? <div className="welcome"><div className="welcome-symbol"><Sparkles size={28}/></div><div className="welcome-kicker">{t("从一个好问题开始")}</div><h2>{t("让数据，回答你的问题。")}</h2><p>{t("选择数据源，直接提问。结论、图表和查询过程都在这里。")}</p><div className="current-data"><div className="data-icon"><Database size={20}/></div><div><strong>{source?.name}</strong><span>{source?.tables.length}{t("张表")}{primaryTable?.rows != null ? t(" · {0} 条记录", primaryTable.rows.toLocaleString(getLanguage())) : ''}</span></div><span className="tag">{source?.experiment ? t("实验副本") : source?.dataset === 'olist' ? t("真实历史数据") : source?.kind === 'demo' ? t("模拟数据") : source?.kind === 'csv' ? 'CSV' : t("只读连接")}</span></div><div className="suggestions">{suggestions.map(s => <button key={s.question} disabled={busy} onClick={() => void send(s.question)}><span className="suggestion-top"><s.icon size={17}/>{s.label}</span><span>{s.question}<ArrowRight size={16}/></span></button>)}</div><div className="welcome-foot"><ShieldCheck size={14}/>{t("每一条结论，都可以查看背后的 SQL")}</div></div> : <div className="message-list">{messages.map(m => <div key={m.id} className={'message ' + m.role}><div className={'message-avatar ' + (m.role === 'user' ? 'person' : '')}>{m.role === 'user' ? t("我") : <Sparkles size={18}/>}</div><div className="message-body"><div className="message-name">{m.role === 'user' ? t("你") : t("知数")}{m.role === 'assistant' && <span>{m.result?.mode === 'demo' ? t("规则演示") : t("分析助手")}</span>}</div>{m.result?.report ? <AnalysisReport report={m.result.report} busy={busy} ask={q => void send(q)}/> : <div className={'message-text ' + (m.result?.error ? 'error-text' : '')}>{m.content}</div>}{m.result?.business_context && <ContextReference context={m.result.business_context}/>}{m.result && <EvidencePanel result={m.result}/>}
+{m.result?.notice && <div className="result-notice">{m.result.notice}</div>}{m.result?.panels?.length ? <div className="analysis-panels">{m.result.panels.map((panel, i) => <section key={i}><h4>[{panel.step}] {panel.title}</h4><ResultCard message={{...m, result: panel}} cid={cid} notify={notify}/></section>)}</div> : m.result?.sql && <ResultCard message={m} cid={cid} notify={notify}/>}</div></div>)}
       {busy && <div className="message assistant pending"><div className="message-avatar"><Sparkles size={18}/></div><div className="message-body"><div className="message-name">{t("知数")}<span>{t("正在分析")}</span></div><div className="steps">{steps.map((s, i) => <div className="step" key={i}>{i === steps.length - 1 ? <Loader2 size={15} className="spin"/> : <CheckCircle2 size={15}/>}<div>{s.label}<small>{s.detail}</small></div></div>)}</div>{plan && <p className="plan-text">{plan}</p>}{liveSql && <details className="live-sql"><summary>{t("查看当前 SQL")}</summary><pre>{liveSql}</pre></details>}</div></div>}
-      {!busy && messages.some(m => m.result?.sql) && <div className="followups"><span>{t("继续探索")}</span>{(sourceId === "demo-commerce" ? [t("退款率是多少？"), t("分析 2026 年 9 月的净销售额变化")] : [t("改成折线图"), t("只看第二季度")]).map(q => <button key={q} onClick={() => void send(q)}>{q}<ArrowRight size={13}/></button>)}</div>}<div ref={bottom}/></div>}
+      {!busy && !messages.some(m => m.result?.report) && messages.some(m => m.result?.sql) && <div className="followups"><span>{t("继续探索")}</span>{(sourceId === "demo-commerce" ? [t("退款率是多少？"), t("分析 2026 年 9 月的净销售额变化")] : [t("改成折线图"), t("只看第二季度")]).map(q => <button key={q} onClick={() => void send(q)}>{q}<ArrowRight size={13}/></button>)}</div>}<div ref={bottom}/></div>}
     </div><div className="composer-wrap"><form className={'composer ' + (busy ? 'processing' : '')} onSubmit={e => { e.preventDefault(); void send(); }}><textarea ref={textarea} aria-label={t("输入数据分析问题")} value={input} maxLength={4000} disabled={busy} placeholder={busy ? t("正在分析，请稍候…") : t("问问你的数据，例如：哪些地区的销售表现最好？")} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
             e.preventDefault();
             void send();
@@ -464,6 +454,10 @@ function App() {
     {showSchema && source && <aside className="schema-panel"><div className="schema-title"><span>{t("数据上下文")}</span><Layers3 size={16}/></div><div className="schema-source"><div className="data-icon"><Database size={20}/></div><strong>{source.name}</strong><span className="tag">{source.dialect === 'duckdb' ? 'DuckDB' : source.dialect === 'postgres' ? 'PostgreSQL' : 'MySQL'}</span></div><p className="schema-description">{source.description}</p><div className="schema-table-label">{t("数据表")}<span>{source.tables.length}</span></div><div className="schema-tables">{source.tables.map(t => <details open={source.tables.length === 1} key={t.name}><summary><Table2 size={15}/>{t.name}<span>{t.columns.length}</span></summary><div className="schema-fields">{t.columns.map(c => <div key={c.name}><span className="field-type">{/INT|DOUBLE|DECIMAL|FLOAT/i.test(c.type) ? '#' : /DATE|TIME/i.test(c.type) ? '◷' : 'Aa'}</span><span title={c.name}>{c.name}</span><small>{c.type.replace(/\(.*/, '')}</small></div>)}</div></details>)}</div><div className="schema-bottom"><ShieldCheck size={17}/><div>{t("可追溯的分析")}<small>{t("SQL 校验后执行，结果来自当前数据源。")}</small></div></div><button className="secondary-button preview-button" disabled={busy} onClick={() => setView('data')}><Table2 size={15}/>{t("预览数据")}</button></aside>}
     </div></> : <main className="data-page"><div className="page-heading"><div><span className="eyebrow">DATA SOURCES</span><h1>{t("你的数据，准备就绪。")}</h1><p>{t("管理分析的数据来源，查看真实字段与数据预览。")}</p></div><button className="primary-button" onClick={() => setModal('source')}><Plus size={17}/>{t("添加数据源")}</button></div><div className="source-grid">{displaySources.map(s => <button key={s.id} className={'source-card ' + (sourceId === s.id ? 'selected' : '')} onClick={() => { setSourceId(s.id); setCid(''); setMessages([]); }}><div className="source-card-top"><div className="data-icon">{s.kind === 'csv' ? <FileSpreadsheet size={22}/> : <Database size={22}/>}</div>{sourceId === s.id ? <CheckCircle2 size={19}/> : <span className="status-led"/>}</div><strong>{s.name}</strong><p>{s.description}</p><div className="source-card-footer"><span>{s.tables.length}{t("张表")}</span><span>{s.kind === 'demo' ? t("模拟数据") : s.dialect.toUpperCase()}</span></div></button>)}</div><section className="preview-section"><div className="preview-heading"><div><h2>{t("数据预览")}</h2><span>{t("最多显示前 20 行")}</span></div><select aria-label={t("选择要预览的数据表")} value={selectedTable} onChange={e => setSelectedTable(e.target.value)}>{source?.tables.map(t => <option key={t.name} value={t.name}>{t.schema ? `${t.schema}.` : ''}{t.name}</option>)}</select><button className="text-button" onClick={() => setModal("context")}>{t("业务上下文")}</button><button className="text-button" onClick={() => reset()}>{t("分析这个数据源")}<ArrowRight size={16}/></button></div>{preview ? <DataTable result={preview}/> : <div className="empty-small">{previewError ? <span role="alert">{previewError}</span> : <><Loader2 size={18} className="spin"/>{t("正在读取数据…")}</>}</div>}</section>{source?.dataset === 'olist' && <PipelinePanel sourceId={source.id} experiment={source.experiment} added={addSource}/>}</main>}
     </div>
+    {deleteTarget && <Modal title={t("删除聊天记录")} subtitle={deleteTarget.title} onClose={() => {if (!deleting) setDeleteTarget(null);}}>
+      <p className="delete-description">{t("将删除这个会话的全部消息、图表和查询结果，删除后无法恢复。数据源、业务说明和 API 设置会保留。")}</p>
+      <div className="modal-actions"><button className="secondary-button" disabled={deleting} onClick={() => setDeleteTarget(null)}>{t("取消")}</button><button className="primary-button danger-button" disabled={deleting || busy} onClick={() => void deleteConversation()}>{deleting ? <Loader2 className="spin" size={16}/> : <Trash2 size={16}/>} {deleting ? t("正在删除…") : t("确认删除")}</button></div>
+    </Modal>}
     {modal === 'settings' && settings && <SettingsModal settings={settings} close={() => setModal('')} saved={setSettings} notify={notify}/>}
     {modal === 'context' && source && <Modal title={t("业务上下文")} subtitle={source.name} onClose={() => setModal('')}><BusinessContextEditor sourceId={source.id} onSaved={() => {notify(t("业务说明已保存")); setModal('');}}/></Modal>}
     {modal === 'source' && <SourceModal close={() => setModal('')} added={addSource}/>}

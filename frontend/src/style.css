@@ -39,3 +39,36 @@ html[lang="en-US"] .brand-mark { width: 32px; height: 36px; grid-row: span 2; }
 html[lang="en-US"] .brand strong { font-size: 1.05rem; letter-spacing: .2px; }
 html[lang="en-US"] .brand .version { grid-column: 2; justify-self: start; margin: 0; }
 .pipeline-panel { margin-top: 24px; padding: 24px; background: var(--surface, white); border: 1px solid #dde5e2; border-radius: 16px; } .pipeline-panel details { padding: 12px 0; border-bottom: 1px solid #e7ebe9; } .pipeline-panel summary { cursor: pointer; overflow-wrap: anywhere; } .pipeline-panel pre,.evidence-query pre { overflow: auto; max-height: 420px; white-space: pre-wrap; overflow-wrap: anywhere; } .experiment-controls { margin-top: 20px; } .experiment-controls select { padding: 8px; margin: 8px; }
+
+/* Evidence-backed decision briefs and BI result workspace. */
+.decision-report {line-height:1.8; color:var(--text, #28434b);}
+.report-conclusion {font-size:16px;font-weight:600;white-space:pre-wrap;}
+.decision-report section {margin-top:20px;}
+.decision-report h4,.analysis-panels h4 {margin:0 0 10px;font-size:14px;}
+.decision-report ul {margin:0;padding-left:22px;}
+.decision-report li {margin:8px 0;white-space:pre-wrap;}
+.report-actions {padding:16px 20px;background:#edf6f2;border-left:3px solid #168773;border-radius:8px;}
+.report-followups {display:flex;flex-wrap:wrap;gap:8px;}
+.report-followups button {text-align:left;border:1px solid #d7e5e1;border-radius:18px;background:white;padding:8px 13px;color:#226c60;}
+.analysis-panels {display:grid;gap:24px;margin-top:24px;min-width:0;}
+.analysis-panels>section {min-width:0;}
+.bi-chart-controls {display:flex;align-items:start;flex-wrap:wrap;gap:16px;padding:16px 20px;border-bottom:1px solid #edf1f0;}
+.bi-chart-controls>label {display:grid;gap:5px;font-size:12px;color:#536c70;}
+.bi-chart-controls select {max-width:240px;border:1px solid #d9e4e2;border-radius:6px;padding:7px;background:white;color:#28434b;}
+.bi-chart-controls fieldset {display:flex;flex-wrap:wrap;gap:10px;border:0;padding:0;min-width:0;}
+.bi-chart-controls legend {font-size:12px;color:#536c70;margin-bottom:8px;}
+.bi-chart-controls fieldset label {font-size:12px;display:flex;align-items:center;gap:4px;}
+.bi-chart .chart {height:380px;min-width:0;}
+.kpi-grid {display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;padding:24px;}
+.kpi-grid article {border:1px solid #dfebe6;background:#f6faf8;border-radius:10px;padding:18px;min-width:0;}
+.kpi-grid span {display:block;font-size:12px;color:#617a79;overflow-wrap:anywhere;}
+.kpi-grid strong {display:block;font-size:26px;margin-top:10px;color:#157c69;overflow-wrap:anywhere;}
+@media(max-width:700px) {.bi-chart-controls {padding:12px;gap:12px;}.bi-chart-controls select {max-width:190px;}.bi-chart .chart {height:320px;}.kpi-grid {padding:12px;}.report-actions {padding:12px;}}
+
+.history-row {display:flex;align-items:center;gap:3px;min-width:0;}
+.history-row .history-item {flex:1;min-width:0;}
+.history-delete {display:flex;align-items:center;justify-content:center;flex:0 0 30px;height:34px;color:#9cb8b5;border-radius:6px;}
+.history-delete:hover,.history-delete:focus-visible {color:#ffd2c9;background:#874d4a55;}
+.delete-description {font-size:14px;line-height:1.8;color:#617a79;}
+.danger-button {background:#ad5145;}
+.danger-button:hover {background:#923f36;}

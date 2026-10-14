@@ -148,5 +148,6 @@
   "单次查询": "Single query",
   "多步调查": "Investigation",
   "检索业务知识": "Retrieve business knowledge",
-  "命中 {0} 个片段": "{0} passages retrieved"
+  "命中 {0} 个片段": "{0} passages retrieved",
+  "这个对话正在分析，完成后才能删除。": "This conversation is being analyzed. Wait for it to finish before deleting it."
 }

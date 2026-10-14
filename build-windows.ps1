@@ -19,7 +19,8 @@ $localeAssets = (Join-Path $PSScriptRoot 'backend\locales') + ':backend/locales'
     --add-data $webAssets --add-data $versionAsset --add-data $localeAssets --hidden-import sqlalchemy.dialects.postgresql.psycopg `
     --hidden-import sqlalchemy.dialects.mysql.pymysql --hidden-import socksio `
     --collect-all sqlglot --collect-all psycopg --collect-all psycopg_binary `
-    --exclude-module pytest --exclude-module IPython --exclude-module matplotlib launcher.py
+    --exclude-module pytest --exclude-module IPython --exclude-module matplotlib `
+    --exclude-module fastembed --exclude-module onnxruntime --exclude-module huggingface_hub launcher.py
 if ($LASTEXITCODE -ne 0) { throw 'Windows build failed.' }
 Copy-Item -LiteralPath 'WINDOWS-README.txt' -Destination (Join-Path $appDirectory 'README.txt')
 Copy-Item -LiteralPath 'VERSION', 'LICENSE', 'THIRD_PARTY_NOTICES.md' -Destination $appDirectory

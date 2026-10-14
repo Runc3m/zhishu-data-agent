@@ -143,6 +143,15 @@ class Store:
         with self.connect() as c:
             return [dict(r) for r in c.execute('SELECT * FROM conversations ORDER BY updated_at DESC')]
 
+    def delete_conversation(self, cid):
+        # Delete messages and their parent atomically; sources/settings are separate.
+        with self.connect() as c:
+            c.execute('BEGIN IMMEDIATE')
+            if not c.execute('SELECT 1 FROM conversations WHERE id=?', (cid,)).fetchone():
+                raise ValueError('对话不存在。')
+            c.execute('DELETE FROM messages WHERE conversation_id=?', (cid,))
+            c.execute('DELETE FROM conversations WHERE id=?', (cid,))
+
     def conversation(self, cid):
         with self.connect() as c:
             row = c.execute('SELECT * FROM conversations WHERE id=?', (cid,)).fetchone()

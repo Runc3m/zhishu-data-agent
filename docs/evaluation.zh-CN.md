@@ -43,3 +43,13 @@
 | 三种上下文方式，3 题 × 双语 | 各 6/6 | 关键词、混合、完整上下文均通过；未证明业务回答准确率提升 |
 
 复现命令：`python -m evals.warehouse --live --app-storage storage`、`python -m evals.retrieval`、`python -m evals.ablation`。warehouse 与 ablation 会消耗 API 额度，retrieval 为纯本地测试。原始失败记录仍保留在本地 evaluation-results，包括一次无效引用；该问题修复后复测。调查解释仍可能出现过度概括，用户必须核对证据。Olist 没有真实成本和退款，不以该数据声称利润或净收入分析能力。
+
+## 对话式 BI 回归
+
+完整后端回归 161 项通过；格式校验与简短解释修复后的定向回归 78 项通过，前端图表数据映射 6 项通过。真实模型测试覆盖中英各三轮：宽泛排名、解释追问、决策建议，共 6/6 通过指定检查。GMV 冠军另外使用 raw_orders + raw_order_items 独立查询核验，避免订单金额连接明细后重复计数。完整记录见 [conversational-bi.json](evaluations/conversational-bi.json)。
+
+这是六个对话冒烟案例，不是整体业务准确率。首轮发现了商品明细连接导致的重复金额，以及后续一轮模型返回错误对象被当成空计划；修复后复验通过。自然语言的每一项因果/建议仍需人工审阅；粒度校验只覆盖已知直接关联模式。
+
+复现：`python -m evals.conversation --live --app-storage storage`（使用已保存模型配置，会产生 API 用量）；图表测试：在 frontend 中运行 `npm run test:charts`。
+
+浏览器端另发现一次报告对象后追加字段的格式异常；最终增加首个完整对象解析与截断结论恢复，20 项相关回归通过，避免把原始 JSON 展示在对话里。

@@ -1,37 +1,82 @@
-# InsightBridge 知数
+<div align="center">
 
-A bilingual, locally running data analysis assistant. Ask in natural language and get inspectable SQL, charts and findings.
+# InsightBridge · 知数
 
-[简体中文](README.md) · [Download for Windows](https://github.com/Runc3m/zhishu-data-agent/releases) · [User guide](docs/usage.en.md) · [Roadmap](docs/roadmap.en.md)
+### Ask a business question. Get an analysis you can check.
 
-![Zhishu: regional net revenue computed from synthetic retail orders and refunds](docs/assets/workspace.en.png)
+An open-source, bilingual AI data workspace. Connect data, clarify metrics, explore charts, and ask what comes next.
 
-## From questions to results
+[简体中文](README.md) · **English**
 
-- **Natural-language analysis**: inspect the schema, plan a query, execute read-only SQL and attempt bounded repairs when needed.
-- **Charts beside their queries**: bar, line and pie charts, sortable result tables and the SQL that actually ran.
-- **Local data workspace**: import CSV or connect to PostgreSQL / MySQL; sources and analysis history are saved automatically.
-- **Chinese and English**: switch the interface, analysis messages and suggested questions without rewriting existing conversations or raw data.
-- **Simple model setup**: DeepSeek requires only an API key; other Chat Completions-compatible providers and local models are supported too.
-- **Business definitions**: describe columns, metrics and relationships per source; analyses retain the context version used to explain their basis.
-- **Try it without a key**: demo mode executes predefined queries against synthetic records, without calling a model.
-- **Export your work**: download query results as CSV and analysis records as Markdown.
+[![Release](https://img.shields.io/github/v/release/Runc3m/zhishu-data-agent?color=278575)](https://github.com/Runc3m/zhishu-data-agent/releases/latest)
+[![Checks](https://github.com/Runc3m/zhishu-data-agent/actions/workflows/checks.yml/badge.svg)](https://github.com/Runc3m/zhishu-data-agent/actions/workflows/checks.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-For individual analysts, operators and developers exploring data, checking metrics and preparing analysis. This is a single-user local tool, without public hosting or team accounts.
+[**Download for Windows**](https://github.com/Runc3m/zhishu-data-agent/releases/latest) · [Quickstart](#quickstart) · [Documentation](docs/usage.en.md) · [Report an issue](https://github.com/Runc3m/zhishu-data-agent/issues)
 
-## Quick start
+</div>
 
-### Windows users
+![InsightBridge analyzing public Olist data: category rankings, interactive charts, and query evidence](docs/assets/analysis.en.png)
 
-1. Download the latest `Zhishu-v1.1.0-windows-x64.zip` from [Releases](https://github.com/Runc3m/zhishu-data-agent/releases).
-2. Extract the entire archive, open the `Zhishu` folder and double-click `Zhishu.exe`.
-3. Your browser opens the workspace. Select a suggested question to explore the sample sales data.
+*Actual application screenshot using public Olist historical data. Import the dataset separately; free-form AI questions require a configured model.*
 
-No Python or Node.js installation is required. Keep the launch center open or minimized while working, then select Quit Zhishu. See the [user guide](docs/usage.en.md) for installation, updates and storage locations.
+## Start with the question you already have
 
-### Developers
+“Which sells best?” could mean sales value, units, or profit. InsightBridge uses your data and business definitions to explain the comparison, execute queries, and interpret the results. Keep asking questions, or inspect the SQL behind the answer.
 
-Requires Windows, Python 3.13, Node.js 22+ and pnpm 11.19.0.
+| Your task | Ask | What InsightBridge helps with |
+| --- | --- | --- |
+| Understand sales performance | Which category sells best? Do value and volume tell the same story? | Compare metrics, rankings, and trends with an explicit period and definition |
+| Make sense of a result | Explain this simply. What should I look into next? | Explain existing query evidence and suggest actions to validate and missing information |
+| Clarify a business metric | Does delivered GMV include shipping? How is it calculated? | Retrieve configured business definitions alongside schema and metric context |
+| Investigate a reporting issue | Check the daily sales report and trace issues through the pipeline | Inspect ETL, table lineage, and load records in the registered Olist pipeline and run checks |
+
+Built for individual analysts, operators, and developers exploring data, checking metrics, and drafting analyses. Currently a local, single-user workspace.
+
+## One analysis. Keep the conversation going.
+
+Using Olist historical e-commerce data:
+
+1. **“Which sells best?”** By delivered goods value, `health_beauty` leads at **BRL 1,233,131.72**. By units sold, `bed_bath_table` leads at **10,953 units**.
+2. **“Explain this simply.”** The category with the highest goods value can differ from the one selling the most items. Goods value excludes shipping and is not profit.
+3. **“Which category should I prioritize?”** Get candidate directions based on the queries, along with the cost, inventory, and other evidence needed before deciding.
+
+The figures can be checked against public data and reference SQL. The third step supports a decision; a sales ranking alone cannot establish business returns. [See the recorded questions and results](docs/evaluations/conversational-bi.json)
+
+## Why InsightBridge
+
+- **From a question to an analysis report.** Broad questions, multiple queries, and explanatory follow-ups produce conclusions, findings, actions to validate, and limitations.
+- **Charts that fit the data.** Choose from 12 chart and metric views where compatible with the returned fields. Explore multiple series, switch metrics, zoom, and export images or each panel's CSV.
+- **Your business definitions as context.** Configure field meanings, metrics, and relationships per data source. Retrieve relevant passages and retain context versions with the analysis.
+- **Evidence you can inspect.** Expand executed read-only SQL, results, retrieved passages, and investigation steps. Export analyses to Markdown.
+- **A local workspace in two languages.** Save sources and conversations, delete individual chats, and choose your model provider. Simplified Chinese is the default; switch to English at the top right.
+
+**Views:** KPI cards · column · horizontal bar · line · area · stacked bar · pie · donut · scatter · heatmap · treemap · histogram.
+
+## Quickstart
+
+### Windows: download, extract, open
+
+1. [Download the latest Windows x64 ZIP](https://github.com/Runc3m/zhishu-data-agent/releases/latest), extract the entire archive, and open `Zhishu.exe`. No Python or Node.js installation required.
+2. The local workspace opens in your browser. Choose Sales demo or Commerce investigation demo and click a suggested question. **No API key needed for the rule-based demos.**
+3. For free-form questions, open Model settings and add your own DeepSeek key or a Chat Completions-compatible service. Compatible local models are also supported.
+
+Demo mode uses preset questions and synthetic data without calling an LLM. AI mode uses your configured service and may incur API charges. [Installation and upgrades](docs/usage.en.md) · [Model setup](docs/models.en.md)
+
+### Bring your data
+
+| Source | How it works |
+| --- | --- |
+| CSV | Upload one file, preview its fields, and start analyzing |
+| Multi-CSV ZIP | Import a package and query its tables within one DuckDB source |
+| PostgreSQL / MySQL | Connect with a read-only database account |
+| Public Olist e-commerce data | Upload the official nine-file ZIP to build 13 raw, staging, fact, report, and load-log tables |
+
+Olist contains **99,441 orders** from 2016–2018, with amounts in BRL. Download it separately under its CC BY-NC-SA 4.0 license; it is not bundled with the application. [Official dataset](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce) · [Import and investigation guide](docs/warehouse.en.md)
+
+### Developers: run from source
+
+Windows, Python 3.13, Node.js 22+, and pnpm 11.19.0:
 
 ```powershell
 git clone https://github.com/Runc3m/zhishu-data-agent.git
@@ -39,42 +84,33 @@ cd zhishu-data-agent
 .\start.ps1 -Rebuild
 ```
 
-Open the local address printed by the script. See the [development guide](docs/development.en.md) for testing, architecture and packaging.
+Optional local multilingual semantic retrieval for the source edition:
 
-## Try an analysis
+```powershell
+.\.venv\Scripts\python -m pip install -r requirements-rag.txt
+.\.venv\Scripts\python -m scripts.setup_warehouse --download --embeddings
+```
 
-Select Sample sales data, ask “Monthly sales trend”, follow up with “Only show the second quarter”, then “What about profit?”. Change the chart type, inspect the SQL or export results.
+The second command downloads Olist and a pretrained retrieval model; no training is needed. The Windows package uses keyword retrieval and does not bundle the semantic model. With the optional source setup, retrieval combines BM25 and multilingual embeddings. The interface reports the actual mode. [Development guide](docs/development.en.md)
 
-For your own CSV, preview columns first. Open-ended questions require AI in Model settings. Follow the [model setup guide](docs/models.en.md).
+## Evidence and boundaries
 
-Files and history are stored locally. With remote AI enabled, questions, schema, configured business context, recent conversation and up to 30 result rows are sent to the selected provider and consume its API allowance.
+InsightBridge reads the schema and business context, retrieves relevant definitions, plans and validates read-only queries, and retains the evidence. Failed queries have a bounded repair budget.
 
-See [business context](docs/business-context.en.md) and the [evaluation guide](docs/evaluation.en.md) for defining metrics and checking results.
+- **Public evaluations.** Bilingual business cases, Olist investigations, and conversational checks are available. Six conversational cases passed their specified checks: a small smoke test, not an accuracy claim for every business question. [Methods and records](docs/evaluation.en.md)
+- **Local storage.** With remote AI enabled, questions, schema, business passages, recent conversation, and bounded query results/statistical summaries are sent to the selected provider. Running locally does not mean zero data transmission to remote AI. [Models and data](docs/models.en.md)
+- **Defined scope.** No team accounts, row-level permissions, scheduled refresh, or public hosting. No direct Excel import or queries across separate data sources. Lineage investigations cover registered pipelines; model conclusions and recommendations need review.
 
-## Documentation and contributions
+## Help solve real questions
 
-[User guide](docs/usage.en.md) · [Model setup](docs/models.en.md) · [Development](docs/development.en.md) · [FAQ](docs/faq.en.md) · [Contributing](CONTRIBUTING.en.md) · [Roadmap](docs/roadmap.en.md) · [Changelog](CHANGELOG.en.md)
+Share a sanitized schema, question, expected result, and observed behavior in an issue. Do not upload API keys or private business records. Contributions of test cases, translations, and connectors are welcome. If InsightBridge helps you, star the repository to follow its progress.
 
-Reproducible bug reports, suggestions and pull requests are welcome. Original code is under the [MIT license](LICENSE). See [third-party notices](THIRD_PARTY_NOTICES.md) for dependency licenses and product inspiration.
+[User guide](docs/usage.en.md) · [Business context](docs/business-context.en.md) · [FAQ](docs/faq.en.md) · [Roadmap](docs/roadmap.en.md) · [Changelog](CHANGELOG.en.md) · [Contributing](CONTRIBUTING.md)
 
+## Built on established tools
 
-## Local development edition: InsightBridge / 知数
+React and Apache ECharts power the interface; FastAPI orchestrates analysis; DuckDB executes local queries; SQLGlot parses and validates SQL; optional FastEmbed / ONNX Runtime provides local multilingual retrieval.
 
-The English product name is **InsightBridge**; the Chinese name remains 知数. Existing repository URLs, storage paths, health-check IDs and historical release filenames remain compatible. These changes have not yet been published as a new Windows package.
+Product design draws on [WrenAI](https://github.com/Canner/WrenAI), [Data Formulator](https://github.com/microsoft/data-formulator), and [DataHub Analytics Agent](https://github.com/datahub-project/analytics-agent). InsightBridge is an independent project, not an official product of those projects.
 
-- **Bilingual retrieval**: FastEmbed / ONNX Runtime runs pretrained multilingual-e5-small locally; RRF combines semantic and BM25 rankings. Retrieve fields, metrics, schemas and ETL, preserving mandatory metric exclusions and relationship constraints. Missing embeddings visibly fall back to keywords. No request-time downloads; complete business snapshots are retained for audit rather than injected wholesale.
-- **Real warehouse**: upload up to 20 CSVs in a ZIP (256 MB compressed / 512 MB expanded). Olist's nine-file format creates DuckDB raw, staging, order fact, daily report and load-history tables. Historical dates stay in 2016–2018 and currency stays BRL. No invented costs or refunds.
-- **Pipeline investigations**: reuse SQLGlot table lineage and actual ETL, load records, knowledge retrieval and read-only SQL. At most 8 tool actions and 2 repairs. Independent coverage, amount, reconciliation and refresh checks cover the local snapshot, not arbitrary ETL languages or source-system completeness.
-
-Setup: install `requirements-rag.txt`, then run `python -m scripts.setup_warehouse --download --embeddings`. Use `--archive FILE` for an existing official Olist ZIP. Start the existing `start.ps1`; the UI prioritizes the real warehouse when available. On the data page inspect the pipeline and create isolated healthy/fault copies. Fault labels are withheld from the planner; originals remain unchanged. Olist data is CC BY-NC-SA 4.0; see [publisher](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce).
-
-Run `python -m evals.warehouse --live --app-storage storage` for real model evaluation (provider fees apply), and `python -m evals.retrieval` for the synthetic bilingual retrieval probe. Reports are written under `evaluation-results/`. Automatic evidence checks do not establish narrative correctness; manually review the explanations.
-- **Investigation**: choose Automatic, Single query or Investigation beside the input. AI investigations allow five successful analytical queries and two repairs in total, and stop repeated queries. Up to three additional read-only source diagnostics run first. A soft 180-second budget is checked before starting another step; in-flight calls may exceed it.
-- **Inspectable evidence**: each step exposes executed SQL, rows and truncation. Retrieved passages, observations, reconciliation and stopping reasons persist in history and Markdown exports.
-- **Summary scope**: numeric profiles cover all returned rows, with a sample of at most 30 rows. A capped result is not the full database; population claims require aggregate SQL. Mechanical column sums do not imply additive business metrics.
-
-The initial source is Commerce investigation demo. Its first card compares August with July 2026 through five executed queries: order coverage and quality, refund quality and relationships, overall totals, category contributions, and a follow-up on the largest contributor. Synthetic net sales are CNY 5,890 → 4,960, a change of -930. Electronics contributes -1,240, Home +310, and Sports 0; the breakdown reconciles.
-
-Two further cards demonstrate ambiguous refund-rate definitions and missing September data. This rule demo supports its card questions only. Edited demo definitions require AI mode; the original Sales demo remains available separately.
-
-For your own CSV or database, enable AI. Automatic diagnostics inspect only selected typed columns, not every quality condition. Date bounds alone do not prove ingestion completeness. Verify model-generated reconciliation and causal claims against evidence. Mocked-planner tests do not measure real-model accuracy; live evaluation needs a configured provider.
+Original code is [MIT licensed](LICENSE). Dependencies, optional models, and example data retain their own licenses. [Third-party notices](THIRD_PARTY_NOTICES.md)

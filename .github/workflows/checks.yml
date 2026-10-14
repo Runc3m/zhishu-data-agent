@@ -26,3 +26,5 @@ jobs:
         working-directory: frontend
       - run: pnpm build
         working-directory: frontend
+      - run: pnpm test:charts
+        working-directory: frontend

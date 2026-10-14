@@ -1,4 +1,4 @@
-"""Verify actual packaged v1.0 storage can be reopened by a new executable."""
+"""Verify a previous packaged version's storage can be reopened by a new executable."""
 import argparse
 import json
 from pathlib import Path
@@ -71,7 +71,7 @@ def main():
             assert client.get(url + f'/api/conversations/{cid}/messages').json() == history
         finally:
             stop(process)
-    print('Upgrade PASS: v1.0 history, CSV, language, encrypted key retained; business context persisted across restart.')
+    print('Upgrade PASS: previous history, CSV, language, encrypted key retained; business context persisted across restart.')
 
 
 if __name__ == '__main__':

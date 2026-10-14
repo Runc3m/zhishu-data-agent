@@ -39,3 +39,13 @@ Four faults and a healthy control, each in both languages, passed 10/10 automate
 On a separate synthetic Chinese-only glossary, Top-3 retrieval was 20/20 for Chinese in both modes, and 0/20 lexical versus 20/20 hybrid for English. In the small end-to-end ablation (3 questions × 2 languages), lexical, hybrid and full-context variants each passed 6/6. This demonstrates cross-language retrieval improvement, not a business-answer accuracy advantage.
 
 Reproduce with `python -m evals.warehouse --live --app-storage storage`, `python -m evals.retrieval`, and `python -m evals.ablation`. Warehouse and ablation use paid provider calls; retrieval is local. The source snapshot has no reliable cost/refund data. Results are single runs, not production guarantees; unsupported generalizations can still appear in model explanations.
+
+## Conversational BI regression
+
+The full backend suite passed 161 tests; targeted post-fix regression passed 78 tests and chart mapping passed six tests. Six live conversational smoke cases (broad ranking, explanation, decision support in each language) passed the specified checks. The GMV leader is independently verified from raw_orders + raw_order_items to detect order/item fan-out errors. See [conversational-bi.json](evaluations/conversational-bi.json).
+
+These six cases are not a general accuracy benchmark. Initial runs exposed duplicated order amounts after item joins and an invalid model object silently accepted as an empty plan; both were repaired before the final rerun. Narrative claims still need human review, and the grain guard covers known direct-join patterns only.
+
+Reproduce with `python -m evals.conversation --live --app-storage storage` (uses saved provider settings and incurs API usage). Run chart tests from frontend with `npm run test:charts`.
+
+Browser validation additionally caught a malformed report with trailing fields. First-object parsing and complete-conclusion recovery were added; 20 related tests passed to prevent raw JSON from appearing in chat.

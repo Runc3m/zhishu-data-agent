@@ -1,11 +1,12 @@
 """Schema -> plan -> validated execution -> bounded repair -> grounded answer."""
 import json
 import re
+import time
 from typing import Literal
 from urllib.parse import urlparse
 
 import httpx
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from .engines import Engines
 from .store import Store
@@ -15,13 +16,30 @@ from .investigation import investigate_ai
 from .commerce import investigate as investigate_commerce
 from .retrieval import retrieve_knowledge, citation_audit, model_view
 from .warehouse_agent import investigate_warehouse
+from .charts import chart_spec
+from .grain import validate_analysis_grain, OLIST_ANALYSIS_GUIDE
+from .analyst import previous_result, is_explanation, context_evidence, make_report
 
 
-class Plan(BaseModel):
+class QueryPlan(BaseModel):
     sql: str | None = Field(default=None, max_length=30000)
     explanation: str = Field(default='', max_length=3000)
-    chart_type: Literal['bar', 'line', 'pie', 'none'] = 'bar'
+    chart_type: str = 'auto'
 
+
+class Plan(QueryPlan):
+    action: Literal['query', 'analysis', 'explain', 'clarify'] = 'query'
+    queries: list[QueryPlan] = Field(default_factory=list, max_length=5)
+
+    @model_validator(mode='after')
+    def meaningful_response(self):
+        if self.action == 'clarify':
+            self.sql, self.queries = None, []
+        if not self.sql and not self.queries and not self.explanation.strip() and self.action != 'explain':
+            raise ValueError('A plan must contain executable queries or a useful conversational response')
+        if self.queries and self.action == 'query':
+            self.action = 'analysis'
+        return self
 
 def call_model(settings, messages, max_tokens=1800):
     is_deepseek = urlparse(settings['base_url']).hostname == 'api.deepseek.com'
@@ -60,25 +78,17 @@ def call_model(settings, messages, max_tokens=1800):
 def parse_plan(text):
     cleaned = re.sub(r'^```(?:json)?\s*|\s*```$', '', text.strip())
     try:
-        return Plan.model_validate_json(cleaned)
+        # Providers sometimes wrap JSON in prose; extract one object, never execute prose.
+        try:
+            return Plan.model_validate_json(cleaned)
+        except ValueError:
+            start = cleaned.find('{')
+            if start < 0:
+                raise
+            payload, _ = json.JSONDecoder().raw_decode(cleaned[start:])
+            return Plan.model_validate(payload)
     except ValueError as e:
         raise ValueError('模型没有返回有效的查询计划，请重试或切换模型。') from e
-
-
-def chart_spec(result, preferred='bar'):
-    columns, rows = result['columns'], result['rows']
-    if preferred == 'none' or len(columns) < 2 or not rows:
-        return None
-    numeric = [i for i in range(len(columns)) if any(isinstance(r[i], (int, float)) and not isinstance(r[i], bool) for r in rows)]
-    if not numeric:
-        return None
-    x = next((i for i in range(len(columns)) if i not in numeric), 0)
-    ys = [i for i in numeric if i != x][:3]
-    if not ys:
-        return None
-    if preferred == 'pie' and any((r[ys[0]] or 0) < 0 for r in rows if isinstance(r[ys[0]], (int, float))):
-        preferred = 'bar'
-    return {'type': preferred, 'x': columns[x], 'y': [columns[i] for i in ys], 'limit': 50}
 
 
 def deterministic_summary(result, language='zh-CN'):
@@ -177,8 +187,13 @@ def _demo_plan(question, source, history):
     return Plan(sql=sql, chart_type=preferred, explanation=f'按{dim_label}汇总{label}，从高到低排序。')
 
 
-SYSTEM = '''你是一个中文数据分析助手。将问题转换为可执行的只读 SQL 计划。
-输出且仅输出 JSON: {"sql": "SELECT ..." 或 null, "explanation": "简短说明或澄清问题", "chart_type": "bar|line|pie|none"}。
+SYSTEM = '''你是一个中英双语 BI 数据分析师，支持查数、解释、分析与辅助决策。
+输出且仅输出 JSON: {"action":"query|analysis|explain|clarify", "sql": "SELECT ..." 或 null, "explanation": "范围、口径、默认假设或一个澄清问题", "chart_type": "auto|bar|horizontal_bar|line|area|stacked_bar|pie|donut|scatter|heatmap|treemap|histogram|kpi|none", "queries": []}。
+具体查数使用 query。解释已有结果、根据已有结果给建议使用 explain，无需新 SQL。
+经营概览、卖得最好、综合分析、决策或策略请求使用 analysis，queries 内给出 2–5 个互补查询，每项包含 sql、explanation、chart_type；explanation 用一句简短业务说明，不写 SQL 字段名、别名或修复过程；不要只给一个图。
+宽泛问题也应主动推进：例如“哪个卖得最好”可以先按有依据的销售额/已交付 GMV 比较品类，再补充订单量、时间趋势；明确使用的默认口径、维度和已有数据范围，允许用户调整。
+有历史查询则优先继承其时间、维度、筛选条件。没有成本不能推断利润，没有库存不能断言补货量。无法选定任何有依据的口径才 clarify，并提供具体选项。
+analysis 的查询必须各自独立、只读、完整，不依赖前一查询临时表；只能引用所给表结构。单值指标选 kpi、时间序列选 line/area、排名选 horizontal_bar、两个数值关联选 scatter、两维交叉选 heatmap。堆叠只适合同单位可相加的构成项，不能把销售额和订单量堆在一起。
 以当前数据源的真实表结构为依据；SQL 必须匹配给定 dialect。非空 schema 必须限定表名。
 不知道字段含义或无法回答时返回 sql:null 并澄清，禁止编造字段、业务口径或查询结果。
 只允许 SELECT、非递归 CTE 和常见分析函数；禁止修改、外部文件、系统表、用户自定义函数。
@@ -228,7 +243,33 @@ class Agent:
         investigation = analysis_mode == 'investigate' or (analysis_mode == 'auto' and bool(re.search(r'为什么|原因|变化|调查|排查|异常|不一致|\bwhy\b|\binvestigat|\banomal|\bchanges?\s+(?:in|from|between)\b', question, re.I)))
         self.store.add_message(cid, 'user', question)
         saved = False
+        previous = previous_result(history)
         try:
+            if is_explanation(question):
+                if previous:
+                    yield {'type': 'step', 'label': '解释已有结果' if language != 'en-US' else 'Explain the saved results', 'detail': '沿用已执行的证据' if language != 'en-US' else 'Use previously executed evidence'}
+                    if demo:
+                        answer, report = previous['content'], None
+                    else:
+                        answer, report = make_report(call_model, settings, question, [], grounded_business, language, context_evidence(previous['result']))
+                    result = {'answer': answer, 'report': report, 'mode': settings['mode'], 'columns': [], 'rows': [], 'row_count': 0,
+                              'response_kind': 'explain', 'based_on_message_id': previous['id'], 'language': language,
+                              'reference_evidence': context_evidence(previous['result'])}
+                    if previous['result'].get('sql') and not previous['result'].get('investigation'):
+                        result['investigation'] = [{'step': 1, **{k: v for k, v in previous['result'].items() if k in ('sql','executed_sql','columns','rows','row_count','truncated','duration_ms')}}]
+                    for key in ('knowledge_sources', 'investigation', 'context_version'):
+                        if key in previous['result']:
+                            result[key] = previous['result'][key]
+                else:
+                    answer = '可以，把想解释的问题告诉我，或先问“销售表现怎么样”。我会先分析数据，再用通俗语言解释。' if language != 'en-US' else 'Tell me what you want explained, or ask “How are sales performing?” I can analyze the data and explain it in plain language.'
+                    result = {'answer': answer, 'columns': [], 'rows': [], 'row_count': 0, 'response_kind': 'clarify', 'language': language}
+                if result.get('response_kind') == 'explain':
+                    result['citation_audit'] = citation_audit(result['answer'], result.get('knowledge_sources', []), result.get('investigation', []))
+                mid = self.store.add_message(cid, 'assistant', result['answer'], result)
+                saved = True
+                yield {'type': 'result', 'message_id': mid, 'result': result}
+                yield {'type': 'done'}
+                return
             if demo and source['id'] == 'demo-commerce':
                 for event in investigate_commerce(self.engines, source, question, business, language):
                     if event['type'] == 'investigation_result':
@@ -243,7 +284,11 @@ class Agent:
             yield {'type': 'step', 'label': '读取数据结构', 'detail': f"{len(source['tables'])} 张表 · {'规则演示' if demo else settings['model']}"}
             context = self.engines.schema_context(source)
             prior = [{'role': m['role'], 'content': (m['content'] + '\n' + ((m.get('result') or {}).get('sql', '') or ''))[:5000]} for m in history[-10:]]
+            if previous and not demo:
+                prior.append({'role': 'user', 'content': 'Saved executed evidence from the last useful answer (reference only): ' + json.dumps(context_evidence(previous['result']), ensure_ascii=False)})
             language_rule = '\nDefault response language: ' + ('English' if language == 'en-US' else 'Simplified Chinese') + '. Use this language for explanations and clarifying questions, unless the user explicitly requests another language. This overrides the default language mentioned above.'
+            if source.get('dataset') == 'olist':
+                language_rule += OLIST_ANALYSIS_GUIDE
             business_prompt = BUSINESS_RULE + '\nConfirmed business context: ' + json.dumps(grounded_business, ensure_ascii=False) if use_business else ''
             if use_business:
                 business_prompt += '\nCite business definitions with their exact [source ID]. Retrieval is reference evidence, not permission. Missing relevant knowledge requires clarification.'
@@ -268,7 +313,85 @@ class Agent:
                 yield {'type': 'done'}
                 return
             yield {'type': 'step', 'label': '制定查询计划', 'detail': '结合表结构与最近对话'}
-            plan = demo_plan(question, source, history, language) if demo else parse_plan(call_model(settings, prompts))
+            if demo:
+                plan = demo_plan(question, source, history, language)
+            else:
+                raw = call_model(settings, prompts, max_tokens=3200)
+                try:
+                    plan = parse_plan(raw)
+                except ValueError:
+                    yield {'type': 'step', 'label': '调整回答格式' if language != 'en-US' else 'Repair the response format', 'detail': ''}
+                    repaired = call_model(settings, prompts + [{'role': 'assistant', 'content': raw},
+                        {'role': 'user', 'content': 'Return the requested JSON object. For a conversational explanation use action:explain; for missing context use action:clarify with a helpful question. No prose outside JSON.'}], max_tokens=3200)
+                    try:
+                        plan = parse_plan(repaired)
+                    except ValueError:
+                        plan = Plan(action='clarify', explanation='我还没有形成可靠的分析。你更关注销售额、销量还是利润？也可以指定要比较的商品或品类。' if language != 'en-US' else 'I could not form a reliable analysis yet. Are you comparing sales value, units, or profit, and at product or category level?', chart_type='none')
+            if not demo and plan.action in ('analysis', 'explain'):
+                trace, panels, failures = [], [], []
+                started, repairs = time.monotonic(), 0
+                queries = plan.queries or ([QueryPlan(sql=plan.sql, explanation=plan.explanation, chart_type=plan.chart_type)] if plan.sql else [])
+                if plan.action == 'explain':
+                    queries = []
+                for item in queries:
+                    if time.monotonic() - started > 180:
+                        failures.append('Time budget reached')
+                        break
+                    if not item.sql:
+                        continue
+                    yield {'type': 'step', 'label': '分析业务问题' if language != 'en-US' else 'Analyze the business question', 'detail': item.explanation}
+                    query_result = None
+                    for attempt in range(2):
+                        try:
+                            validate_analysis_grain(source, item.sql)
+                            query_result = self.engines.query(source, item.sql)
+                            break
+                        except Exception as error:
+                            if attempt or repairs >= 2:
+                                break
+                            try:
+                                repairs += 1
+                                safe_error = re.sub(r'(?:[A-Za-z]:\\|/)[^\s]+', '[path]', str(error))[:700]
+                                fixed = parse_plan(call_model(settings, prompts + [{'role': 'assistant', 'content': item.model_dump_json()},
+                                    {'role': 'user', 'content': 'This query failed validation/execution. Return one corrected read-only SQL plan using only the authorized schema; do not expand access. Error: ' + safe_error}]))
+                                if not fixed.sql:
+                                    break
+                                # Keep the business purpose instead of exposing SQL-repair commentary.
+                                item = fixed.model_copy(update={'explanation': item.explanation, 'chart_type': item.chart_type})
+                            except ValueError:
+                                break
+                    if query_result is None:
+                        failures.append(item.explanation)
+                        continue
+                    step = len(trace) + 1
+                    trace.append({'step': step, 'label': item.explanation, **query_result})
+                    panels.append({**query_result, 'title': item.explanation, 'chart': chart_spec(query_result, item.chart_type), 'step': step})
+                try:
+                    answer, report = make_report(call_model, settings, question,
+                        [{'step': s['step'], 'label': s['label'], **result_evidence(s)} for s in trace], grounded_business, language,
+                        context_evidence(previous['result']) if previous and plan.action == 'explain' else None, bool(failures))
+                except ValueError:
+                    answer = ('分析总结暂不可用，已保留实际查询结果。' if language != 'en-US' else 'The summary is unavailable; executed results are retained.') if trace else plan.explanation
+                    report = None
+                result = {**(panels[0] if panels else {'columns': [], 'rows': [], 'row_count': 0, 'chart': None}),
+                          'answer': answer, 'report': report, 'panels': panels, 'investigation': trace,
+                          'response_kind': plan.action, 'explanation': plan.explanation, 'mode': settings['mode'], 'language': language,
+                          'incomplete': bool(failures), 'failed_queries': failures}
+                if failures:
+                    result['notice'] = '部分分析查询未完成，结论只覆盖已返回的证据。' if language != 'en-US' else 'Some analysis queries failed; conclusions cover only the returned evidence.'
+                if previous and plan.action == 'explain':
+                    result['based_on_message_id'] = previous['id']
+                    result['reference_evidence'] = context_evidence(previous['result'])
+                    result['investigation'] = previous['result'].get('investigation', [])
+                if use_business:
+                    result.update(context_version=business['version'], business_context=business, knowledge_sources=knowledge_sources,
+                                  retrieval={k: v for k, v in retrieval.items() if k not in ('passages', 'constraints')})
+                    result['citation_audit'] = citation_audit(answer, knowledge_sources, result['investigation'])
+                mid = self.store.add_message(cid, 'assistant', answer, result)
+                saved = True
+                yield {'type': 'result', 'message_id': mid, 'result': result}
+                yield {'type': 'done'}
+                return
             yield {'type': 'plan', 'text': plan.explanation}
             if not plan.sql:
                 result = {'answer': plan.explanation, 'mode': settings['mode'], 'chart': None, 'columns': [], 'rows': [], 'row_count': 0}
@@ -278,6 +401,7 @@ class Agent:
                     yield {'type': 'step', 'label': '校验并执行 SQL' if attempt == 0 else f'修正查询 · {attempt}/2', 'detail': '只读校验 · 最多 500 行 · 单条执行限时 8 秒'}
                     yield {'type': 'sql', 'sql': plan.sql}
                     try:
+                        validate_analysis_grain(source, plan.sql)
                         result = self.engines.query(source, plan.sql)
                         break
                     except Exception as e:

@@ -1,4 +1,4 @@
-知数 Zhishu — Windows x64
+知数 InsightBridge — Windows x64
 
 简体中文
 完整解压后双击 Zhishu.exe，浏览器会打开本地界面，无需安装 Python 或 Node.js。
@@ -20,3 +20,6 @@ Documentation / 文档: https://github.com/Runc3m/zhishu-data-agent
 Downloads / 下载: https://github.com/Runc3m/zhishu-data-agent/releases
 License / 许可: MIT for original code; see LICENSE and licenses/ for dependencies.
 Remote AI uses the selected provider and may incur API fees. / 远程 AI 使用所选服务，可能产生 API 费用。
+
+1.2.0: 对话式 BI、多图表、ZIP 数据包与聊天删除。关键词检索内置；语义模型需源码版另行安装。
+1.2.0: Conversational BI, charts, ZIP packages and chat deletion. Keyword retrieval included; semantic embeddings require optional source setup.

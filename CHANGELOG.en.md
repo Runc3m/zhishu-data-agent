@@ -2,14 +2,17 @@
 
 [简体中文](CHANGELOG.md) · [Home](README.en.md)
 
-## Unreleased: real warehouse and bilingual investigations
+## 1.2.0 — 2026-10-14
 
-- Reuse DuckDB for multi-CSV ZIP ingestion; Olist's nine files produce 13 raw/staging/fact/report/load-history tables.
-- Reuse FastEmbed, ONNX Runtime and pretrained multilingual E5 with BM25, explicit fallback, context-version isolation and citation checks.
-- SQLGlot table lineage, actual ETL, load history, independent reconciliation and read-only investigation tools.
-- Four isolated faults plus healthy controls and bilingual pipeline UI; original data remains unchanged.
-- Final 143 automated tests passed; real-model business checks 40/40 and investigation evidence gates 10/10. See evaluation docs for scope and limitations.
-- Source launcher prefers the project virtual environment. No new Windows binary release.
+- Conversational BI: broad questions, multi-query reports, explanatory follow-ups and actions to validate; repaired invalid plans and malformed JSON presentation.
+- 12 chart/KPI views, shape compatibility, grouped trends, image and per-panel CSV exports.
+- Multi-CSV ZIP and 13-table Olist warehouse, SQLGlot lineage, actual ETL, load records and independent checks.
+- Business retrieval, context versions and citation checks. Windows uses keyword retrieval; source users can optionally install FastEmbed / ONNX hybrid retrieval.
+- Bounded investigations, synthetic commerce demo, quality observations, evidence exports and known Olist order/item grain checks.
+- Delete individual conversations while retaining other chats, sources and model settings.
+- Refreshed bilingual project pages with Simplified Chinese as default, screenshots, guides and Windows package; English name InsightBridge.
+
+See [evaluation methods and limitations](docs/evaluation.en.md). Local single-user operation, without team permissions, scheduled refresh or public hosting.
 
 ## 1.1.0
 
@@ -32,10 +35,3 @@ First public release.
 - Windows launch center, bilingual documentation, automated tests and versioned releases.
 
 Known limitations: local single-user operation; limited demo questions; no Excel, multi-file or cross-source joins; model output requires verification; application not code-signed.
-
-## Unreleased — InsightBridge
-
-- English product name is InsightBridge; Chinese name and existing storage remain compatible.
-- Adds BM25 retrieval, bounded AI investigation and source-quality observations.
-- Adds a bilingual synthetic commerce investigation with inspectable/exportable evidence.
-- Summaries receive profiles of all returned rows with explicit sample and truncation limits.
