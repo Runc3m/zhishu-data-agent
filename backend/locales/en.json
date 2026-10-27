@@ -154,5 +154,12 @@
   "{0} 条相似问题": "{0} similar questions",
   "每个数据源最多保存 200 条已验证查询，请先删除不再需要的记录。": "Each data source can keep up to 200 verified queries. Delete ones you no longer need first.",
   "已验证查询不存在。": "Verified query not found.",
-  "这条回答没有可验证的查询。": "This answer has no query to verify."
+  "这条回答没有可验证的查询。": "This answer has no query to verify.",
+  "合计": "total",
+  "平均": "average",
+  "按 {0} 的月份汇总 {1}（{2}）。": "{1} by month of {0} ({2}).",
+  "按 {0} 汇总 {1}（{2}），从高到低排序，最多 50 组。": "{1} by {0} ({2}), highest first, up to 50 groups.",
+  "统计各 {0} 的记录数，最多 50 组。": "Record count by {0}, up to 50 groups.",
+  "计算 {0} 的数量、合计、平均值、最小值和最大值。": "Count, total, average, minimum and maximum of {0}.",
+  "当前为规则演示模式，可以识别问题中的字段名，例如：{0}。如需自由提问，请在模型设置中启用 AI 模式。": "Demo mode recognizes column names in your question, for example: {0}. Enable AI in Model settings for other questions."
 }

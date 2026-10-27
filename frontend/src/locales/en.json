@@ -299,5 +299,11 @@
   "删除已验证查询：{0}": "Delete verified query: {0}",
   "从数据生成取值草稿": "Draft from data values",
   "只填入输入框；检查、删减并保存后才会用于分析。": "Fills the box only. Review, trim and save before analysis uses it.",
-  "读取数据统计失败，请重试。": "Could not read data statistics. Try again."
+  "读取数据统计失败，请重试。": "Could not read data statistics. Try again.",
+  "对比分析": "Compare",
+  "分布结构": "Breakdown",
+  "主题：深色": "Theme: dark",
+  "主题：浅色": "Theme: light",
+  "主题：跟随系统": "Theme: system",
+  "按 / 输入问题": "Press / to ask"
 }

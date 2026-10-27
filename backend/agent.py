@@ -19,6 +19,7 @@ from .warehouse_agent import investigate_warehouse
 from .charts import chart_spec
 from .grain import validate_analysis_grain, OLIST_ANALYSIS_GUIDE
 from .analyst import previous_result, is_explanation, context_evidence, make_report
+from .explore import rule_plan, rule_help
 
 
 class QueryPlan(BaseModel):
@@ -133,7 +134,7 @@ def demo_plan(question, source, history, language='zh-CN'):
         'what about profit': '那利润呢', 'what about the third quarter': '那第三季度呢',
     }
     canonical = questions.get(question.strip().lower().rstrip('?.!'), question)
-    plan = _demo_plan(canonical, source, history)
+    plan = _demo_plan(canonical, source, history, language)
     if language == 'en-US':
         plan.explanation = translate(plan.explanation, language)
         # New query aliases can be English; original table/column identifiers stay unchanged.
@@ -143,7 +144,7 @@ def demo_plan(question, source, history, language='zh-CN'):
     return plan
 
 
-def _demo_plan(question, source, history):
+def _demo_plan(question, source, history, language='zh-CN'):
     q = question.strip()
     previous = next((m.get('result') for m in reversed(history) if m['role'] == 'assistant' and (m.get('result') or {}).get('sql')), None)
     preferred = 'pie' if '饼图' in q or '占比' in q else 'line' if '折线' in q or '趋势' in q else 'bar'
@@ -153,10 +154,19 @@ def _demo_plan(question, source, history):
         table = source['tables'][0]
         quote = '`' if source['dialect'] == 'mysql' else '"'
         table_name = '.'.join(quote + part.replace(quote, quote * 2) + quote for part in [table.get('schema'), table['name']] if part)
+        # Questions naming columns ("各 region 的记录数") are more specific than the fixed phrases below.
+        planned = None if any(w in q for w in ['预览', '前20', '前 20']) else rule_plan(q, source)
+        if planned:
+            sql, explanation, chart = planned
+            return Plan(sql=sql, explanation=explanation, chart_type=chart)
         if any(w in q for w in ['多少行', '记录数', '行数']):
             return Plan(sql=f'SELECT COUNT(*) AS record_count FROM {table_name}', explanation='统计第一张数据表的记录数量。', chart_type='none')
         if any(w in q for w in ['预览', '前20', '前 20']):
             return Plan(sql=f'SELECT * FROM {table_name} LIMIT 20', explanation='预览第一张数据表的前 20 行。', chart_type='none')
+        examples = rule_help(source, language)
+        if examples:
+            joined = ('; ' if language == 'en-US' else '；').join(examples)
+            return Plan(explanation=f'当前为规则演示模式，可以识别问题中的字段名，例如：{joined}。如需自由提问，请在模型设置中启用 AI 模式。', chart_type='none')
         return Plan(explanation='当前为规则演示模式。自己的数据支持“预览前 20 行”和“共有多少行”；如需自由提问，请在模型设置中启用 AI 模式。', chart_type='none')
     if any(w in q for w in ['为什么', '原因', '预测', '同比', '环比']):
         return Plan(explanation='这个问题需要更完整的分析计划。演示模式支持销售概览、地区/品类/渠道对比、月度趋势和简单追问；请启用 AI 模式进行进一步分析。', chart_type='none')
