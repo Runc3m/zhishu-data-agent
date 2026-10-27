@@ -19,6 +19,7 @@ from .agent import Agent, call_model
 from .engines import Engines, csv_bytes, public_source
 from .store import Store
 from .providers import DEEPSEEK_URL, DEEPSEEK_MODEL, provider_settings
+from .safety import validate_sql
 from .i18n import translate
 from .version import VERSION
 from .commerce import seed_commerce
@@ -80,6 +81,18 @@ class MessageInput(BaseModel):
     analysis_mode: Literal['auto', 'query', 'investigate'] = 'auto'
 
     @field_validator('content')
+    @classmethod
+    def nonempty(cls, v):
+        if not v.strip():
+            raise ValueError('请输入问题。')
+        return v.strip()
+
+
+class VerifyInput(BaseModel):
+    question: str = Field(min_length=1, max_length=500)
+    step: int | None = Field(default=None, ge=1)
+
+    @field_validator('question')
     @classmethod
     def nonempty(cls, v):
         if not v.strip():
@@ -260,6 +273,35 @@ def create_app(storage_path=None):
     @app.put('/api/sources/{source_id}/context')
     def save_business_context(source_id: str, data: BusinessContextInput):
         return store.save_business_context(source_id, data.model_dump())
+
+    @app.get('/api/sources/{source_id}/profile')
+    def profile(source_id: str, request: Request):
+        return {'fields': engines.profile(store.source(source_id), request.state.language)}
+
+    @app.get('/api/sources/{source_id}/verified')
+    def verified_queries(source_id: str):
+        store.source(source_id)
+        return store.verified_queries(source_id)
+
+    @app.delete('/api/sources/{source_id}/verified/{qid}')
+    def delete_verified_query(source_id: str, qid: str):
+        store.delete_verified_query(source_id, qid)
+        return {'ok': True}
+
+    @app.post('/api/conversations/{cid}/messages/{mid}/verify')
+    def verify_message(cid: str, mid: str, data: VerifyInput):
+        message = next((m for m in store.messages(cid) if m['id'] == mid and m['role'] == 'assistant'), None)
+        result = (message or {}).get('result') or {}
+        if result.get('panels'):
+            # Multi-query analyses are verified one panel at a time.
+            result = next((p for p in result['panels'] if p.get('step') == data.step), {})
+        sql = result.get('sql')
+        if not sql or result.get('error'):
+            raise HTTPException(404, '这条回答没有可验证的查询。')
+        source = store.source(store.conversation(cid)['source_id'])
+        # Re-check against the current schema so a stale query is never saved as an example.
+        validate_sql(sql, source['dialect'], source['tables'])
+        return store.add_verified_query(source['id'], data.question, sql)
 
     @app.get('/api/conversations')
     def conversations():

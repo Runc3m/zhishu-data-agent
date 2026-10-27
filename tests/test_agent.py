@@ -299,6 +299,7 @@ def test_proxy_dependency_error_is_friendly(monkeypatch):
 
 @pytest.mark.parametrize('status,reason', [(401, 'API Key 无效'), (402, '余额不足'), (404, '接口地址或模型不存在'), (429, '请求过于频繁')])
 def test_safe_model_errors(monkeypatch, status, reason):
+    monkeypatch.setattr('backend.agent.RETRY_DELAYS', (0, 0))
     real_client = httpx.Client
     monkeypatch.setattr('backend.agent.httpx.Client', lambda **kw: real_client(
         transport=httpx.MockTransport(lambda req: httpx.Response(status, text='test-secret')), **kw))
