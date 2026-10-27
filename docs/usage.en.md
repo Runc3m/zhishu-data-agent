@@ -14,7 +14,7 @@ Choose Sample sales data and a suggested question. Results offer charts, sortabl
 
 ## Add data
 
-CSV headers are column names. UTF-8 / GB18030 are supported, up to 20 MB, 100,000 rows and 120 columns per file. Imported data uses the `data` table. Demo supports “Preview the first 20 rows” and “How many rows are there?”. Enable AI for other questions.
+CSV headers are column names. UTF-8 / GB18030 are supported, up to 20 MB, 100,000 rows and 120 columns per file. Imported data uses the `data` table. Rule mode supports “Preview the first 20 rows”, “How many rows are there?” and questions that name columns, such as “Total amount by region”, “Monthly amount trend”, “amount summary” and “Record count by channel”. The welcome screen suggests such questions from your columns; enable AI for open-ended questions.
 
 Connect to PostgreSQL / MySQL using a read-only account. The first 30 tables in the selected schema are inspected. Cross-source queries are unsupported. Queries return up to 500 rows, charts show up to 50 groups and each query has an 8-second timeout.
 
