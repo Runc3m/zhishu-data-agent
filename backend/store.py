@@ -11,6 +11,8 @@ from pathlib import Path
 from cryptography.fernet import Fernet
 from .providers import provider_settings
 
+MAX_VERIFIED = 200
+
 
 def uid():
     return uuid.uuid4().hex
@@ -49,6 +51,10 @@ class Store:
             CREATE TABLE IF NOT EXISTS messages (
                 id TEXT PRIMARY KEY, conversation_id TEXT NOT NULL REFERENCES conversations(id),
                 role TEXT NOT NULL, content TEXT NOT NULL, result TEXT, created_at TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS verified_queries (
+                id TEXT PRIMARY KEY, source_id TEXT NOT NULL, question TEXT NOT NULL,
+                sql TEXT NOT NULL, created_at TEXT NOT NULL);
+            CREATE INDEX IF NOT EXISTS verified_queries_source ON verified_queries(source_id);
             ''')
 
     @contextmanager
@@ -98,6 +104,32 @@ class Store:
                 version = old['version'] + 1 if old else 1
                 c.execute('INSERT OR REPLACE INTO business_contexts VALUES (?,?,?,?)', (source_id, version, payload, now()))
         return self.business_context(source_id)
+
+    def verified_queries(self, source_id):
+        with self.connect() as c:
+            return [dict(r) for r in c.execute(
+                'SELECT id, question, sql, created_at FROM verified_queries WHERE source_id=? ORDER BY created_at DESC', (source_id,))]
+
+    def add_verified_query(self, source_id, question, sql):
+        self.source(source_id)
+        with self.connect() as c:
+            c.execute('BEGIN IMMEDIATE')
+            old = c.execute('SELECT id FROM verified_queries WHERE source_id=? AND question=?', (source_id, question)).fetchone()
+            if old:
+                # One confirmed answer per question; re-verifying replaces the SQL.
+                c.execute('UPDATE verified_queries SET sql=?, created_at=? WHERE id=?', (sql, now(), old['id']))
+                qid = old['id']
+            else:
+                if c.execute('SELECT COUNT(*) FROM verified_queries WHERE source_id=?', (source_id,)).fetchone()[0] >= MAX_VERIFIED:
+                    raise ValueError('每个数据源最多保存 200 条已验证查询，请先删除不再需要的记录。')
+                qid = uid()
+                c.execute('INSERT INTO verified_queries VALUES (?,?,?,?,?)', (qid, source_id, question, sql, now()))
+        return next(q for q in self.verified_queries(source_id) if q['id'] == qid)
+
+    def delete_verified_query(self, source_id, qid):
+        with self.connect() as c:
+            if not c.execute('DELETE FROM verified_queries WHERE source_id=? AND id=?', (source_id, qid)).rowcount:
+                raise ValueError('已验证查询不存在。')
 
     def settings(self, private=False):
         with self.connect() as c:

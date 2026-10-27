@@ -30,6 +30,24 @@ def scalar(v):
     return str(v)[:10000]
 
 
+SENSITIVE = re.compile(r'^name$|(?:customer|user|contact|full|first|last|real|nick)_?name|phone|mobile|e?mail|address|id_?card|passport|ssn|password|token|姓名|电话|手机|邮箱|地址|身份证|密码', re.I)
+
+
+def column_kind(type_name):
+    t = type_name.upper()
+    if any(k in t for k in ('JSON', 'ARRAY', '[]', 'BLOB', 'BYTEA', 'BINARY', 'STRUCT', 'MAP', 'UNION', 'GEOM')):
+        return None
+    if 'BOOL' in t:
+        return 'boolean'
+    if any(k in t for k in ('DATE', 'TIME')):
+        return 'time'
+    if any(k in t for k in ('INT', 'DEC', 'NUM', 'FLOAT', 'DOUBLE', 'REAL', 'MONEY')):
+        return 'number'
+    if any(k in t for k in ('CHAR', 'TEXT', 'STRING', 'ENUM')):
+        return 'text'
+    return None
+
+
 def public_source(source):
     return {k: v for k, v in source.items() if k not in ('credentials', 'path')}
 
@@ -176,6 +194,54 @@ class Engines:
             'rows': [[scalar(v) for v in r] for r in rows[:MAX_ROWS]],
             'row_count': min(len(rows), MAX_ROWS), 'truncated': len(rows) > MAX_ROWS,
             'duration_ms': round((time.monotonic() - start) * 1000)}
+
+    def profile(self, source, language='zh-CN'):
+        """Draft field notes from real values; nothing is saved or sent to a model until the user saves it."""
+        quote = '`' if source['dialect'] == 'mysql' else '"'
+        q = lambda name: quote + name.replace(quote, quote * 2) + quote
+        en = language == 'en-US'
+        lines = []
+        for table in source['tables']:
+            full = '.'.join(q(part) for part in (table.get('schema'), table['name']) if part)
+            columns = [(c, kind) for c in table['columns'][:60] if (kind := column_kind(c['type']))]
+            if not columns:
+                continue
+            aggregates = [f'COUNT(DISTINCT {q(c["name"])})' + ('' if kind == 'boolean' else f', MIN({q(c["name"])}), MAX({q(c["name"])})') for c, kind in columns]
+            try:
+                stats = iter(self.query(source, f"SELECT {', '.join(aggregates)} FROM {full}")['rows'][0])
+            except Exception:
+                lines.append(f"{table['name']}: " + ('statistics unavailable' if en else '无法读取统计信息'))
+                continue
+            for column, kind in columns:
+                distinct = next(stats)
+                low, high = (None, None) if kind == 'boolean' else (next(stats), next(stats))
+                label = f"{table['name']}.{column['name']} ({column['type']})" if en else f"{table['name']}.{column['name']}（{column['type']}）"
+                sep = ': ' if en else '：'
+                if SENSITIVE.search(column['name']):
+                    lines.append(label + sep + ('may contain personal data; values skipped' if en else '可能包含个人信息，未提取取值'))
+                elif not distinct:
+                    lines.append(label + sep + ('no values' if en else '没有取值'))
+                elif kind == 'text' and distinct <= 12:
+                    try:
+                        values = [r[0] for r in self.query(source, f'SELECT {q(column["name"])} FROM {full} WHERE {q(column["name"])} IS NOT NULL GROUP BY 1 ORDER BY COUNT(*) DESC, 1')['rows']]
+                    except Exception:
+                        values = []
+                    if values and all(len(str(v)) <= 40 for v in values):
+                        lines.append(label + sep + (f'{distinct} values: ' + ', '.join(map(str, values)) if en else f'{distinct} 个取值：' + '、'.join(map(str, values))))
+                    else:
+                        lines.append(label + sep + (f'{distinct} distinct values' if en else f'{distinct} 个不同值'))
+                elif kind in ('number', 'time') and low is not None:
+                    fmt = lambda v: str(round(v, 2)) if isinstance(v, float) else str(v)
+                    lines.append(label + sep + (f'range {fmt(low)} to {fmt(high)}' if en else f'范围 {fmt(low)} ~ {fmt(high)}'))
+                else:
+                    lines.append(label + sep + (f'{distinct} distinct values' if en else f'{distinct} 个不同值'))
+        text, size = [], 0
+        for line in lines:
+            size += len(line) + 1
+            if size > 6000:
+                break
+            text.append(line)
+        return '\n'.join(text)
 
     def schema_context(self, source):
         # Values are intentionally excluded; the model initially sees only schema.

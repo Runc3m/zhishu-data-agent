@@ -23,3 +23,17 @@ html[lang="en-US"] .nav-item { white-space: normal; }
 .context-reference summary { cursor:pointer; }
 .context-reference p { white-space:pre-wrap; overflow-wrap:anywhere; line-height:1.6; }
 .context-reference h4 { margin-bottom:6px; }
+.result-actions { display:flex; align-items:center; gap:2px; }
+.verify-form { padding:4px 18px 16px; border-bottom:1px solid var(--line); background:#fbfdfc; }
+.verify-form .field { margin:12px 0 6px; }
+.verify-form small { display:block; font-size:.75rem; line-height:1.7; color:#8fa4a0; }
+.verify-form > div { display:flex; justify-content:flex-end; gap:8px; margin-top:12px; }
+.verified-sql { font-family:Consolas,"SFMono-Regular",monospace; font-size:.75rem; line-height:1.7; white-space:pre-wrap; overflow-wrap:anywhere; color:#386d64; background:#f8fbfa; border-radius:6px; padding:8px 10px; margin:6px 0 10px; }
+.verified-list { margin-top:24px; padding-top:20px; border-top:1px solid var(--line); }
+.verified-list h3 { font-size:.9375rem; font-weight:600; }
+.verified-list ul { list-style:none; padding:0; margin:12px 0 0; }
+.verified-list li { display:flex; align-items:flex-start; gap:8px; border:1px solid var(--line); border-radius:7px; padding:8px 10px; margin-bottom:8px; font-size:.8125rem; color:#4c676c; }
+.verified-list details { flex:1; min-width:0; }
+.verified-list summary { cursor:pointer; overflow-wrap:anywhere; line-height:1.7; }
+.profile-draft { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.profile-draft small { font-size:.75rem; color:#8fa4a0; }

@@ -1,4 +1,5 @@
 import {useEffect, useState} from 'react';
+import {WandSparkles} from 'lucide-react';
 import {getLanguage, t} from './i18n';
 
 export type BusinessContext = {version: number; updated_at: string | null; notes: string; fields: string; metrics: string; relationships: string};
@@ -23,13 +24,24 @@ async function request(sourceId: string, value?: BusinessContext): Promise<Busin
 export function BusinessContextEditor({sourceId, onSaved}: {sourceId: string; onSaved: () => void}) {
   const [context, setContext] = useState<BusinessContext | null>(null);
   const [error, setError] = useState('');
-  const [saving, setSaving] = useState(false);
+  const [saving, setSaving] = useState(false), [profiling, setProfiling] = useState(false);
   useEffect(() => {
     let active = true;
     setContext(null); setError('');
     request(sourceId).then(data => {if (active) setContext(data);}).catch(e => {if (active) setError(e.message);});
     return () => {active = false;};
   }, [sourceId]);
+  async function draftFields() {
+    setProfiling(true); setError('');
+    try {
+      const response = await fetch(`/api/sources/${encodeURIComponent(sourceId)}/profile`, {headers: {'Accept-Language': getLanguage()}});
+      const data = await response.json();
+      if (!response.ok) throw new Error(typeof data.detail === 'string' ? data.detail : t('读取数据统计失败，请重试。'));
+      setContext(current => current && {...current, fields: ((current.fields ? current.fields.trimEnd() + '\n' : '') + data.fields).slice(0, 8000)});
+    }
+    catch (e) {setError((e as Error).message);}
+    finally {setProfiling(false);}
+  }
   async function save(event: React.FormEvent) {
     event.preventDefault();
     if (!context) return;
@@ -45,7 +57,8 @@ export function BusinessContextEditor({sourceId, onSaved}: {sourceId: string; on
       <p className="context-version">{context.version ? t('当前版本：{0}', context.version) : t('尚未配置')}{context.updated_at && ' · ' + new Date(context.updated_at).toLocaleString(getLanguage())}</p>
       <fieldset disabled={saving}>
         {sections.map(section => <label className="field" key={section.key}>{t(section.label)}
-          <textarea maxLength={8000} rows={3} value={context[section.key]} onChange={e => setContext({...context, [section.key]: e.target.value})} placeholder={t(section.hint)}/>
+          <textarea maxLength={8000} rows={section.key === 'fields' ? 5 : 3} value={context[section.key]} onChange={e => setContext({...context, [section.key]: e.target.value})} placeholder={t(section.hint)}/>
+          {section.key === 'fields' && <span className="profile-draft"><button type="button" className="text-button" disabled={profiling} onClick={() => void draftFields()}><WandSparkles size={14}/>{profiling ? t('正在读取数据…') : t('从数据生成取值草稿')}</button><small>{t('只填入输入框；检查、删减并保存后才会用于分析。')}</small></span>}
         </label>)}
         <div className="modal-actions"><button className="primary-button" disabled={saving}>{saving ? t('正在保存…') : t('保存业务说明')}</button></div>
       </fieldset>

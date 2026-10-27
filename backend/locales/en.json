@@ -60,5 +60,10 @@
   "已有知数正在启动或退出，请稍等几秒再双击。": "Zhishu is already starting or shutting down. Try again in a few seconds.",
   "知数正在启动": "Zhishu is starting",
   "启动失败（{0}）。请检查安装包是否完整，或查看数据目录中的 launcher.log。": "Startup failed ({0}). Check the application files or launcher.log in your data folder.",
-  "没有可用的本地端口，请关闭旧版知数后重试。": "No local port is available. Close older Zhishu instances and retry."
+  "没有可用的本地端口，请关闭旧版知数后重试。": "No local port is available. Close older Zhishu instances and retry.",
+  "参考已验证查询": "Use verified queries",
+  "{0} 条相似问题": "{0} similar questions",
+  "每个数据源最多保存 200 条已验证查询，请先删除不再需要的记录。": "Each data source can keep up to 200 verified queries. Delete ones you no longer need first.",
+  "已验证查询不存在。": "Verified query not found.",
+  "这条回答没有可验证的查询。": "This answer has no query to verify."
 }

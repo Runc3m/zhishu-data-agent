@@ -113,6 +113,8 @@ def test_frontend_catalog_and_version():
     for literal in re.findall(r'\bt\(("(?:[^"\\]|\\.)*")', source):
         key = json.loads(literal)
         assert key in catalog, key
+    for key in re.findall(r"\bt\('([^'\\]+)'", source):
+        assert key in catalog, key
     business = (root / 'frontend/src/BusinessContext.tsx').read_text(encoding='utf-8')
     for key in re.findall(r"(?:label|hint): '([^']+)'", business):
         assert key in catalog
