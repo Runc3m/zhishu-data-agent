@@ -1,9 +1,10 @@
 import {t, getLanguage, useLanguage, setLanguage, type Language} from './i18n';
 import {BusinessContextEditor, ContextReference, type BusinessContext} from './BusinessContext';
+import {ExampleReference, VerifiedQueryList, loadVerifiedQueries, type VerifiedExample} from './VerifiedQueries';
 import {EvidencePanel, type EvidencePayload} from './EvidencePanel';
 import React, { useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { ArrowDownToLine, ArrowRight, ArrowUp, BarChart3, Check, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, Code2, Copy, Database, FileSpreadsheet, FolderOpen, History, Layers3, LineChart, Loader2, Menu, MessageSquare, Plus, Send, Settings2, ShieldCheck, Sparkles, Table2, Trash2, UploadCloud, X, Zap, AlertCircle, PlugZap, CircleHelp } from 'lucide-react';
+import { ArrowDownToLine, ArrowRight, ArrowUp, BadgeCheck, BarChart3, Check, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, Code2, Copy, Database, FileSpreadsheet, FolderOpen, History, Layers3, LineChart, Loader2, Menu, MessageSquare, Plus, Send, Settings2, ShieldCheck, Sparkles, Table2, Trash2, UploadCloud, X, Zap, AlertCircle, PlugZap, CircleHelp } from 'lucide-react';
 import {BIChart} from './BIChart';
 import {AnalysisReport} from './AnalysisReport';
 import './style.css';
@@ -58,6 +59,7 @@ type Result = EvidencePayload & {
     mode?: string;
     notice?: string;
     error?: string;
+    verified_examples?: VerifiedExample[];
     chart?: {
         type: string;
         x: string;
@@ -113,13 +115,34 @@ function DataTable({ result }: {
     const pages = Math.max(1, Math.ceil(rows.length / 10));
     return <><div className="table-scroll"><table><thead><tr><th className="row-index">#</th>{result.columns.map((c, i) => <th key={i}><button onClick={() => { setSort({ index: i, direction: sort?.index === i ? -sort.direction : 1 }); setPage(0); }}>{c}<ChevronDown size={12}/></button></th>)}</tr></thead><tbody>{rows.slice(page * 10, page * 10 + 10).map((row, i) => <tr key={i}><td className="row-index">{page * 10 + i + 1}</td>{row.map((v, j) => <td key={j} className={typeof v === 'number' ? 'numeric' : ''} title={String(v ?? '')}>{formatValue(v)}</td>)}</tr>)}</tbody></table>{!rows.length && <div className="empty-small">{t("没有符合条件的数据")}</div>}</div><div className="table-footer"><span>{rows.length}{t("行")}{result.truncated && t("· 已截断至 500 行")}</span><div><button className="icon-button" aria-label={t("上一页")} disabled={page === 0} onClick={() => setPage(page - 1)}><ChevronLeft size={16}/></button><span>{page + 1} / {pages}</span><button className="icon-button" aria-label={t("下一页")} disabled={page + 1 >= pages} onClick={() => setPage(page + 1)}><ChevronRight size={16}/></button></div></div></>;
 }
-function ResultCard({ message, cid, notify }: {
+function ResultCard({ message, cid, notify, question, step, verified, onVerified }: {
     message: Message;
     cid: string;
     notify: (s: string) => void;
+    question: string;
+    step?: number;
+    verified: boolean;
+    onVerified: () => void;
 }) {
     const result = message.result!;
     const [tab, setTab] = useState(result.chart ? 'chart' : 'data');
+    const [verifying, setVerifying] = useState(false), [draft, setDraft] = useState(question), [saving, setSaving] = useState(false);
+    async function verify(event: React.FormEvent) {
+        event.preventDefault();
+        setSaving(true);
+        try {
+            await api(`/conversations/${cid}/messages/${message.id}/verify`, jsonBody({ question: draft, step }));
+            setVerifying(false);
+            onVerified();
+            notify(t("已保存为已验证查询"));
+        }
+        catch (e) {
+            notify((e as Error).message);
+        }
+        finally {
+            setSaving(false);
+        }
+    }
     function download() {
         const escaped = (v: unknown) => { const raw = String(v ?? ''); const safe = typeof v === 'string' && /^[\s]*[=+@-]/.test(raw) ? "'" + raw : raw; return '"' + safe.replaceAll('"', '""') + '"'; };
         const blob = new Blob(['\ufeff' + [result.columns, ...result.rows].map(row => row.map(escaped).join(',')).join('\r\n')], {type: 'text/csv;charset=utf-8'});
@@ -140,7 +163,9 @@ function ResultCard({ message, cid, notify }: {
     {result.chart && <button role="tab" aria-selected={tab === 'chart'} className={tab === 'chart' ? 'active' : ''} onClick={() => setTab('chart')}><BarChart3 size={15}/>{t("图表")}</button>}
     <button role="tab" aria-selected={tab === 'data'} className={tab === 'data' ? 'active' : ''} onClick={() => setTab('data')}><Table2 size={15}/>{t("数据")}<span className="count">{result.row_count}</span></button>
     <button role="tab" aria-selected={tab === 'sql'} className={tab === 'sql' ? 'active' : ''} onClick={() => setTab('sql')}><Code2 size={15}/>SQL</button></div>
-    <button className="icon-button" title={t("下载 CSV")} aria-label={t("下载查询结果 CSV")} onClick={download}><ArrowDownToLine size={16}/></button></div>
+    <div className="result-actions"><button className={'icon-button ' + (verified ? 'selected' : '')} title={verified ? t("已验证，可再次编辑问题") : t("标记为正确")} aria-label={verified ? t("已验证，可再次编辑问题") : t("标记为正确")} aria-expanded={verifying} onClick={() => { setDraft(question); setVerifying(!verifying); }}><BadgeCheck size={16}/></button>
+    <button className="icon-button" title={t("下载 CSV")} aria-label={t("下载查询结果 CSV")} onClick={download}><ArrowDownToLine size={16}/></button></div></div>
+    {verifying && <form className="verify-form" onSubmit={verify}><label className="field">{t("把问题改写成独立、完整的问法")}<input value={draft} maxLength={500} required autoFocus onChange={e => setDraft(e.target.value)}/></label><small>{t("确认这条 SQL 的结果正确后再保存。启用 AI 后，相似问题会把这条问题与 SQL 作为参考示例发送给模型。")}</small><div><button type="button" className="secondary-button" onClick={() => setVerifying(false)}>{t("取消")}</button><button className="primary-button" disabled={saving || !draft.trim()}>{saving ? t("正在保存…") : t("保存为已验证查询")}</button></div></form>}
     {tab === 'chart' && <BIChart result={result}/>}
     {tab === 'data' && <DataTable result={result}/>}
     {tab === 'sql' && <div className="sql-panel"><div><span>{result.mode === 'demo' ? t("规则生成") : t("AI 生成")}{t("· 实际执行 SQL（含返回行数限制）")}</span><button className="text-button" onClick={copy}><Copy size={14}/>{t("复制")}</button></div><pre><code>{result.executed_sql || result.sql}</code></pre></div>}
@@ -267,6 +292,9 @@ function App() {
     const source = displaySources.find(s => s.id === sourceId);
     const primaryTable = source?.dataset === 'olist' ? source.tables.find(t => t.name === 'fct_orders') : source?.tables[0];
     const notify = (text: string) => setToast(text);
+    const [verifiedSql, setVerifiedSql] = useState<Set<string>>(new Set());
+    const refreshVerified = () => { loadVerifiedQueries(sourceId).then(items => setVerifiedSql(new Set(items.map(item => item.sql)))).catch(() => setVerifiedSql(new Set())); };
+    useEffect(refreshVerified, [sourceId]);
     const suggestions = source?.dataset === 'olist' ? [
  {icon:CircleHelp,label:t("指标口径"),question:t("已交付商品成交额如何计算？包含运费吗？")},
  {icon:LineChart,label:t("真实业务分析"),question:t("按月统计 2017 年已交付商品成交额和订单数")},
@@ -443,8 +471,8 @@ function App() {
     <div className="main-shell"><header className="topbar"><div className="breadcrumb"><button className="icon-button menu-toggle" aria-label={t("打开导航")} onClick={() => setMobileMenu(true)}><Menu size={20}/></button><FolderOpen size={17}/><span>{t("工作空间")}</span><span className="slash">/</span><strong>{view === 'chat' ? t("对话分析") : t("数据源")}</strong></div><div className="top-actions"><select className="language-select" aria-label="Language / 语言" value={language} disabled={languageSaving} onChange={e => void changeLanguage(e.target.value as Language)}><option value="zh-CN">简体中文</option><option value="en-US">English</option></select><button className={'mode-badge ' + (settings?.mode === 'llm' ? 'ai' : '')} disabled={busy} onClick={() => setModal('settings')}><span className="status-led"/>{settings?.mode === 'llm' ? t("AI 分析模式") : t("规则演示模式")}</button><button className="icon-button" title={t("使用说明")} aria-label={t("使用说明")} onClick={() => setModal('help')}><CircleHelp size={19}/></button></div></header>
     {view === 'chat' ? <><div className="analysis-bar"><div><span className="eyebrow">ANALYSIS</span><h1>{cid ? conversations.find(c => c.id === cid)?.title || t("进行中的分析") : t("新的分析")}</h1></div><div className="analysis-actions"><div className="source-select"><Database size={15}/><select aria-label={t("选择数据源")} value={sourceId} disabled={busy} onChange={e => reset(e.target.value)}>{displaySources.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select></div><button className={'icon-button schema-toggle ' + (showSchema ? 'selected' : '')} title={t("查看表结构")} aria-label={t("切换表结构面板")} onClick={() => setShowSchema(!showSchema)}><Table2 size={18}/></button></div></div>
     <div className="analysis-layout"><main className="chat-column"><div className="chat-scroll">
-      {!messages.length ? <div className="welcome"><div className="welcome-symbol"><Sparkles size={28}/></div><div className="welcome-kicker">{t("从一个好问题开始")}</div><h2>{t("让数据，回答你的问题。")}</h2><p>{t("选择数据源，直接提问。结论、图表和查询过程都在这里。")}</p><div className="current-data"><div className="data-icon"><Database size={20}/></div><div><strong>{source?.name}</strong><span>{source?.tables.length}{t("张表")}{primaryTable?.rows != null ? t(" · {0} 条记录", primaryTable.rows.toLocaleString(getLanguage())) : ''}</span></div><span className="tag">{source?.experiment ? t("实验副本") : source?.dataset === 'olist' ? t("真实历史数据") : source?.kind === 'demo' ? t("模拟数据") : source?.kind === 'csv' ? 'CSV' : t("只读连接")}</span></div><div className="suggestions">{suggestions.map(s => <button key={s.question} disabled={busy} onClick={() => void send(s.question)}><span className="suggestion-top"><s.icon size={17}/>{s.label}</span><span>{s.question}<ArrowRight size={16}/></span></button>)}</div><div className="welcome-foot"><ShieldCheck size={14}/>{t("每一条结论，都可以查看背后的 SQL")}</div></div> : <div className="message-list">{messages.map(m => <div key={m.id} className={'message ' + m.role}><div className={'message-avatar ' + (m.role === 'user' ? 'person' : '')}>{m.role === 'user' ? t("我") : <Sparkles size={18}/>}</div><div className="message-body"><div className="message-name">{m.role === 'user' ? t("你") : t("知数")}{m.role === 'assistant' && <span>{m.result?.mode === 'demo' ? t("规则演示") : t("分析助手")}</span>}</div>{m.result?.report ? <AnalysisReport report={m.result.report} busy={busy} ask={q => void send(q)}/> : <div className={'message-text ' + (m.result?.error ? 'error-text' : '')}>{m.content}</div>}{m.result?.business_context && <ContextReference context={m.result.business_context}/>}{m.result && <EvidencePanel result={m.result}/>}
-{m.result?.notice && <div className="result-notice">{m.result.notice}</div>}{m.result?.panels?.length ? <div className="analysis-panels">{m.result.panels.map((panel, i) => <section key={i}><h4>[{panel.step}] {panel.title}</h4><ResultCard message={{...m, result: panel}} cid={cid} notify={notify}/></section>)}</div> : m.result?.sql && <ResultCard message={m} cid={cid} notify={notify}/>}</div></div>)}
+      {!messages.length ? <div className="welcome"><div className="welcome-symbol"><Sparkles size={28}/></div><div className="welcome-kicker">{t("从一个好问题开始")}</div><h2>{t("让数据，回答你的问题。")}</h2><p>{t("选择数据源，直接提问。结论、图表和查询过程都在这里。")}</p><div className="current-data"><div className="data-icon"><Database size={20}/></div><div><strong>{source?.name}</strong><span>{source?.tables.length}{t("张表")}{primaryTable?.rows != null ? t(" · {0} 条记录", primaryTable.rows.toLocaleString(getLanguage())) : ''}</span></div><span className="tag">{source?.experiment ? t("实验副本") : source?.dataset === 'olist' ? t("真实历史数据") : source?.kind === 'demo' ? t("模拟数据") : source?.kind === 'csv' ? 'CSV' : t("只读连接")}</span></div><div className="suggestions">{suggestions.map(s => <button key={s.question} disabled={busy} onClick={() => void send(s.question)}><span className="suggestion-top"><s.icon size={17}/>{s.label}</span><span>{s.question}<ArrowRight size={16}/></span></button>)}</div><div className="welcome-foot"><ShieldCheck size={14}/>{t("每一条结论，都可以查看背后的 SQL")}</div></div> : <div className="message-list">{messages.map((m, i) => <div key={m.id} className={'message ' + m.role}><div className={'message-avatar ' + (m.role === 'user' ? 'person' : '')}>{m.role === 'user' ? t("我") : <Sparkles size={18}/>}</div><div className="message-body"><div className="message-name">{m.role === 'user' ? t("你") : t("知数")}{m.role === 'assistant' && <span>{m.result?.mode === 'demo' ? t("规则演示") : t("分析助手")}</span>}</div>{m.result?.report ? <AnalysisReport report={m.result.report} busy={busy} ask={q => void send(q)}/> : <div className={'message-text ' + (m.result?.error ? 'error-text' : '')}>{m.content}</div>}{m.result?.business_context && <ContextReference context={m.result.business_context}/>}<ExampleReference examples={m.result?.verified_examples}/>{m.result && <EvidencePanel result={m.result}/>}
+{m.result?.notice && <div className="result-notice">{m.result.notice}</div>}{m.result?.panels?.length ? <div className="analysis-panels">{m.result.panels.map((panel, i) => <section key={i}><h4>[{panel.step}] {panel.title}</h4><ResultCard message={{...m, result: panel}} cid={cid} notify={notify} question={panel.title} step={panel.step} verified={verifiedSql.has(panel.sql ?? '')} onVerified={refreshVerified}/></section>)}</div> : m.result?.sql && <ResultCard message={m} cid={cid} notify={notify} question={messages[i - 1]?.role === 'user' ? messages[i - 1].content : ''} verified={verifiedSql.has(m.result?.sql ?? '')} onVerified={refreshVerified}/>}</div></div>)}
       {busy && <div className="message assistant pending"><div className="message-avatar"><Sparkles size={18}/></div><div className="message-body"><div className="message-name">{t("知数")}<span>{t("正在分析")}</span></div><div className="steps">{steps.map((s, i) => <div className="step" key={i}>{i === steps.length - 1 ? <Loader2 size={15} className="spin"/> : <CheckCircle2 size={15}/>}<div>{s.label}<small>{s.detail}</small></div></div>)}</div>{plan && <p className="plan-text">{plan}</p>}{liveSql && <details className="live-sql"><summary>{t("查看当前 SQL")}</summary><pre>{liveSql}</pre></details>}</div></div>}
       {!busy && !messages.some(m => m.result?.report) && messages.some(m => m.result?.sql) && <div className="followups"><span>{t("继续探索")}</span>{(sourceId === "demo-commerce" ? [t("退款率是多少？"), t("分析 2026 年 9 月的净销售额变化")] : [t("改成折线图"), t("只看第二季度")]).map(q => <button key={q} onClick={() => void send(q)}>{q}<ArrowRight size={13}/></button>)}</div>}<div ref={bottom}/></div>}
     </div><div className="composer-wrap"><form className={'composer ' + (busy ? 'processing' : '')} onSubmit={e => { e.preventDefault(); void send(); }}><textarea ref={textarea} aria-label={t("输入数据分析问题")} value={input} maxLength={4000} disabled={busy} placeholder={busy ? t("正在分析，请稍候…") : t("问问你的数据，例如：哪些地区的销售表现最好？")} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
@@ -459,7 +487,7 @@ function App() {
       <div className="modal-actions"><button className="secondary-button" disabled={deleting} onClick={() => setDeleteTarget(null)}>{t("取消")}</button><button className="primary-button danger-button" disabled={deleting || busy} onClick={() => void deleteConversation()}>{deleting ? <Loader2 className="spin" size={16}/> : <Trash2 size={16}/>} {deleting ? t("正在删除…") : t("确认删除")}</button></div>
     </Modal>}
     {modal === 'settings' && settings && <SettingsModal settings={settings} close={() => setModal('')} saved={setSettings} notify={notify}/>}
-    {modal === 'context' && source && <Modal title={t("业务上下文")} subtitle={source.name} onClose={() => setModal('')}><BusinessContextEditor sourceId={source.id} onSaved={() => {notify(t("业务说明已保存")); setModal('');}}/></Modal>}
+    {modal === 'context' && source && <Modal title={t("业务上下文")} subtitle={source.name} onClose={() => setModal('')}><BusinessContextEditor sourceId={source.id} onSaved={() => {notify(t("业务说明已保存")); setModal('');}}/><VerifiedQueryList sourceId={source.id} onChanged={refreshVerified}/></Modal>}
     {modal === 'source' && <SourceModal close={() => setModal('')} added={addSource}/>}
     {modal === 'help' && <Modal title={t("开始你的第一次分析")} onClose={() => setModal('')}><div className="help-content"><p>{t("1. 选择演示数据，或添加 CSV / 数据库连接。")}</p><p>{t("2. 点击建议问题，查看实际查询生成的图表、数据和 SQL。")}</p><p>{t("3. 在模型设置中选择 AI 分析，保持 DeepSeek，只填 API Key，再点“验证并启用”。无需填写网址和模型名。")}</p><p>{t("4. 在同一对话中继续追问；历史对话会自动保存，也可以导出 Markdown 或 CSV。")}</p><p>{t("5. 下次双击知数即可自动打开网页，无需打开 CMD。启动中心可以最小化，用完点击“退出知数”。")}</p><div className="info-note"><ShieldCheck size={20}/><span>{t("当前是本机单用户工作台。给别人用请分享免安装 ZIP，对方填写自己的 Key；127.0.0.1 不是公网网址。")}</span></div></div><div className="modal-actions"><button className="primary-button" onClick={() => setModal('')}>{t("开始分析")}<ArrowRight size={16}/></button></div></Modal>}
     {toast && <div className="toast" role="status"><AlertCircle size={17}/>{toast}<button aria-label={t("关闭提示")} onClick={() => setToast('')}><X size={15}/></button></div>}

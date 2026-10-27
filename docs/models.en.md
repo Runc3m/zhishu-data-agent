@@ -14,6 +14,6 @@ Select Other compatible service / local model, supply the base URL and exact mod
 
 ## Data flow and responses
 
-Planning sends questions, schema and up to 10 recent messages; summarization sends SQL, column names and up to 30 result rows. Database credentials and local file paths are not model context. Follow your organization’s data policies when selecting providers.
+Planning sends questions, schema, up to 10 recent messages and up to 3 similar verified queries (question and SQL); summarization sends SQL, column names and up to 30 result rows. Database credentials and local file paths are not model context. Follow your organization’s data policies when selecting providers.
 
 The interface language is the default response language; explicitly request another language in your question if needed. Each analysis uses the language captured at its start. Model outputs may be wrong: verify SQL and data before business use. Providers charge API fees; demo mode does not call a model.

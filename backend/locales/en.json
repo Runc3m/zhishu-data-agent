@@ -149,5 +149,10 @@
   "多步调查": "Investigation",
   "检索业务知识": "Retrieve business knowledge",
   "命中 {0} 个片段": "{0} passages retrieved",
-  "这个对话正在分析，完成后才能删除。": "This conversation is being analyzed. Wait for it to finish before deleting it."
+  "这个对话正在分析，完成后才能删除。": "This conversation is being analyzed. Wait for it to finish before deleting it.",
+  "参考已验证查询": "Use verified queries",
+  "{0} 条相似问题": "{0} similar questions",
+  "每个数据源最多保存 200 条已验证查询，请先删除不再需要的记录。": "Each data source can keep up to 200 verified queries. Delete ones you no longer need first.",
+  "已验证查询不存在。": "Verified query not found.",
+  "这条回答没有可验证的查询。": "This answer has no query to verify."
 }
