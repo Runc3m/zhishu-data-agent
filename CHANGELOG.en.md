@@ -2,6 +2,13 @@
 
 [简体中文](CHANGELOG.md) · [Home](README.en.md)
 
+## Unreleased
+
+- Verified queries: save correct answers as question and SQL examples; AI analysis references up to 3 similar ones and shows which were used.
+- Column value drafts: read distinct counts, ranges and low-cardinality values from real data into Column descriptions for review, skipping likely personal-data columns.
+- Plans wrapped in prose are extracted, with one format retry for non-JSON replies; unknown chart types no longer fail the analysis.
+- Model requests back off and retry twice on 429 / 5xx responses or dropped connections.
+
 ## 1.1.0
 
 - User-confirmed source notes, column descriptions, metric definitions and relationships.
