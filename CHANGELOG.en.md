@@ -2,6 +2,12 @@
 
 [简体中文](CHANGELOG.md) · [Home](README.en.md)
 
+## Unreleased
+
+- Verified queries: save correct answers as question and SQL examples; AI analysis references up to 3 similar ones and shows which were used.
+- Column value drafts: read distinct counts, ranges and low-cardinality values from real data into Column descriptions for review, skipping likely personal-data columns.
+- Model requests back off and retry twice on 429 / 5xx responses or dropped connections.
+
 ## 1.2.0 — 2026-10-14
 
 - Conversational BI: broad questions, multi-query reports, explanatory follow-ups and actions to validate; repaired invalid plans and malformed JSON presentation.

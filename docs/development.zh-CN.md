@@ -22,7 +22,7 @@ cd ..
 
 翻译集中于前后端 `locales`，通过 `i18n` 模块访问。`GET/PUT /api/preferences` 保存语言；消息请求可传 `language`，旧客户端使用已保存偏好。用户数据和历史正文不翻译。
 
-业务上下文使用 `GET/PUT /api/sources/{id}/context`，四个字符串字段为 `notes`、`fields`、`metrics`、`relationships`，各最多 8,000 字符。服务端生成版本和时间；分析结果的 `context_version` 与 `business_context` 保留引用快照。详见[业务上下文](business-context.zh-CN.md)和[评测](evaluation.zh-CN.md)。
+业务上下文使用 `GET/PUT /api/sources/{id}/context`，四个字符串字段为 `notes`、`fields`、`metrics`、`relationships`，各最多 8,000 字符。服务端生成版本和时间；分析结果的 `context_version` 与 `business_context` 保留引用快照。`GET /api/sources/{id}/profile` 返回字段取值草稿文本，不保存。已验证查询使用 `POST /api/conversations/{cid}/messages/{mid}/verify`（`question`）、`GET /api/sources/{id}/verified` 与 `DELETE /api/sources/{id}/verified/{qid}`；分析结果的 `verified_examples` 记录本次参考的示例。详见[业务上下文](business-context.zh-CN.md)和[评测](evaluation.zh-CN.md)。
 
 ## 验证与发布
 

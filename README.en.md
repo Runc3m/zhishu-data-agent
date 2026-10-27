@@ -47,7 +47,8 @@ The figures can be checked against public data and reference SQL. The third step
 
 - **From a question to an analysis report.** Broad questions, multiple queries, and explanatory follow-ups produce conclusions, findings, actions to validate, and limitations.
 - **Charts that fit the data.** Choose from 12 chart and metric views where compatible with the returned fields. Explore multiple series, switch metrics, zoom, and export images or each panel's CSV.
-- **Your business definitions as context.** Configure field meanings, metrics, and relationships per data source. Retrieve relevant passages and retain context versions with the analysis.
+- **Your business definitions as context.** Configure field meanings, metrics, and relationships per data source. Retrieve relevant passages and retain context versions with the analysis. Draft column values from real data, then review and save.
+- **Learns from confirmed answers.** Mark correct results as verified queries; similar questions later reuse those questions and SQL as examples.
 - **Evidence you can inspect.** Expand executed read-only SQL, results, retrieved passages, and investigation steps. Export analyses to Markdown.
 - **A local workspace in two languages.** Save sources and conversations, delete individual chats, and choose your model provider. Simplified Chinese is the default; switch to English at the top right.
 
@@ -98,7 +99,7 @@ The second command downloads Olist and a pretrained retrieval model; no training
 InsightBridge reads the schema and business context, retrieves relevant definitions, plans and validates read-only queries, and retains the evidence. Failed queries have a bounded repair budget.
 
 - **Public evaluations.** Bilingual business cases, Olist investigations, and conversational checks are available. Six conversational cases passed their specified checks: a small smoke test, not an accuracy claim for every business question. [Methods and records](docs/evaluation.en.md)
-- **Local storage.** With remote AI enabled, questions, schema, business passages, recent conversation, and bounded query results/statistical summaries are sent to the selected provider. Running locally does not mean zero data transmission to remote AI. [Models and data](docs/models.en.md)
+- **Local storage.** With remote AI enabled, questions, schema, business passages, up to 3 similar verified queries, recent conversation, and bounded query results/statistical summaries are sent to the selected provider. Running locally does not mean zero data transmission to remote AI. [Models and data](docs/models.en.md)
 - **Defined scope.** No team accounts, row-level permissions, scheduled refresh, or public hosting. No direct Excel import or queries across separate data sources. Lineage investigations cover registered pipelines; model conclusions and recommendations need review.
 
 ## Help solve real questions
