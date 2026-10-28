@@ -4,9 +4,24 @@ import {BarChart, LineChart, PieChart, ScatterChart, HeatmapChart, TreemapChart}
 import {GridComponent, TooltipComponent, LegendComponent, VisualMapComponent, DataZoomComponent, ToolboxComponent} from 'echarts/components';
 import {CanvasRenderer} from 'echarts/renderers';
 import {t, useLanguage} from './i18n';
+import {useResolvedTheme} from './theme';
 
 echarts.use([BarChart, LineChart, PieChart, ScatterChart, HeatmapChart, TreemapChart,
   GridComponent, TooltipComponent, LegendComponent, VisualMapComponent, DataZoomComponent, ToolboxComponent, CanvasRenderer]);
+
+// Axis, legend and tooltip colors follow the app theme; series colors stay in buildOption.
+function chartTheme(text: string, muted: string, line: string, grid: string, surface: string, border: string) {
+  const axis = {axisLine: {lineStyle: {color: line}}, axisTick: {lineStyle: {color: line}}, axisLabel: {color: muted},
+    splitLine: {lineStyle: {color: [grid], type: 'dashed'}}, nameTextStyle: {color: muted}};
+  return {backgroundColor: 'transparent', textStyle: {color: text}, legend: {textStyle: {color: muted}, pageTextStyle: {color: muted}},
+    categoryAxis: {...axis, splitLine: {show: false}}, valueAxis: axis, logAxis: axis, timeAxis: axis,
+    tooltip: {backgroundColor: surface, borderColor: border, textStyle: {color: text}},
+    toolbox: {iconStyle: {borderColor: muted}},
+    dataZoom: {borderColor: border, fillerColor: 'rgba(47,191,156,.12)', handleStyle: {color: surface, borderColor: muted}, textStyle: {color: muted}, dataBackground: {lineStyle: {color: line}, areaStyle: {color: grid}}},
+    visualMap: {textStyle: {color: muted}}};
+}
+echarts.registerTheme('zhishu-light', chartTheme('#17211f', '#7d8986', '#cfd8d4', '#eceff0', '#ffffff', '#e2e7e4'));
+echarts.registerTheme('zhishu-dark', chartTheme('#e6edea', '#81908b', '#31403a', '#1f2a26', '#151d1b', '#31403a'));
 
 export type ChartData = {columns: string[]; rows: (string | number | null)[][]; chart?: {
   type: string; x: string; y: string[]; limit: number; numeric?: string[]; dimensions?: string[]; available?: string[];
@@ -100,7 +115,7 @@ export function buildOption(data: ChartData, kind: string, xName: string, metric
 }
 
 export function BIChart({result}: {result: ChartData}) {
-  const language = useLanguage(), ref = useRef<HTMLDivElement>(null), labels = chartLabels();
+  const language = useLanguage(), theme = useResolvedTheme(), ref = useRef<HTMLDivElement>(null), labels = chartLabels();
   const {numeric, dimensions, types} = chartOptions(result);
   const initial = result.chart?.type || 'bar';
   const [kind, setKind] = useState(types.includes(initial) ? initial : types[0]);
@@ -116,11 +131,11 @@ export function BIChart({result}: {result: ChartData}) {
     const option = buildOption(result, kind, kind === 'scatter' ? scatterX : dimensions[0], metrics, language);
     setValid(!!option);
     if (!option) return;
-    const instance = echarts.init(ref.current);
+    const instance = echarts.init(ref.current, 'zhishu-' + theme);
     instance.setOption(option);
     const observer = new ResizeObserver(() => instance.resize()); observer.observe(ref.current);
     return () => {observer.disconnect(); instance.dispose();};
-  }, [result, kind, scatterX, scatterY, metric, selected, language]);
+  }, [result, kind, scatterX, scatterY, metric, selected, language, theme]);
   if (!types.length) return null;
   return <section className="bi-chart"><div className="bi-chart-controls">
     <label>{t("图表类型")}<select aria-label={t("图表类型")} value={kind} onChange={e => setKind(e.target.value)}>{types.map(type => <option key={type} value={type}>{labels[type]}</option>)}</select></label>

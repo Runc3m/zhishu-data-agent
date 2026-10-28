@@ -7,6 +7,10 @@
 - Verified queries: save correct answers as question and SQL examples; AI analysis references up to 3 similar ones and shows which were used.
 - Column value drafts: read distinct counts, ranges and low-cardinality values from real data into Column descriptions for review, skipping likely personal-data columns.
 - Model requests back off and retry twice on 429 / 5xx responses or dropped connections.
+- Redesigned interface: token-based styles with light, dark and system themes, matching chart colors, a single top bar, message bubbles and Markdown lists and emphasis in AI answers.
+- Analyze your own data without a key: rule mode recognizes column names for grouped totals, monthly trends, numeric summaries and grouped counts; rate-like columns are averaged.
+- Suggested questions generated from each CSV or database source's columns.
+- Shortcuts: Ctrl/⌘ + K for a new analysis, / to focus the question box.
 
 ## 1.2.0 — 2026-10-14
 

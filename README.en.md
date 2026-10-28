@@ -50,7 +50,8 @@ The figures can be checked against public data and reference SQL. The third step
 - **Your business definitions as context.** Configure field meanings, metrics, and relationships per data source. Retrieve relevant passages and retain context versions with the analysis. Draft column values from real data, then review and save.
 - **Learns from confirmed answers.** Mark correct results as verified queries; similar questions later reuse those questions and SQL as examples.
 - **Evidence you can inspect.** Expand executed read-only SQL, results, retrieved passages, and investigation steps. Export analyses to Markdown.
-- **A local workspace in two languages.** Save sources and conversations, delete individual chats, and choose your model provider. Simplified Chinese is the default; switch to English at the top right.
+- **A local workspace in two languages.** Save sources and conversations, delete individual chats, and choose your model provider. Simplified Chinese is the default; switch to English and light/dark themes at the top right.
+- **Analyze your own data without a key.** Imported CSVs and databases get suggested questions from their columns; rule mode recognizes column names for grouped totals, monthly trends and numeric summaries.
 
 **Views:** KPI cards · column · horizontal bar · line · area · stacked bar · pie · donut · scatter · heatmap · treemap · histogram.
 
@@ -62,7 +63,7 @@ The figures can be checked against public data and reference SQL. The third step
 2. The local workspace opens in your browser. Choose Sales demo or Commerce investigation demo and click a suggested question. **No API key needed for the rule-based demos.**
 3. For free-form questions, open Model settings and add your own DeepSeek key or a Chat Completions-compatible service. Compatible local models are also supported.
 
-Demo mode uses preset questions and synthetic data without calling an LLM. AI mode uses your configured service and may incur API charges. [Installation and upgrades](docs/usage.en.md) · [Model setup](docs/models.en.md)
+Rule mode uses preset questions and column-name rules without calling an LLM. AI mode uses your configured service and may incur API charges. [Installation and upgrades](docs/usage.en.md) · [Model setup](docs/models.en.md)
 
 ### Bring your data
 

@@ -20,6 +20,7 @@ from .engines import Engines, csv_bytes, public_source
 from .store import Store
 from .providers import DEEPSEEK_URL, DEEPSEEK_MODEL, provider_settings
 from .safety import validate_sql
+from .explore import suggestions
 from .i18n import translate
 from .version import VERSION
 from .commerce import seed_commerce
@@ -273,6 +274,10 @@ def create_app(storage_path=None):
     @app.put('/api/sources/{source_id}/context')
     def save_business_context(source_id: str, data: BusinessContextInput):
         return store.save_business_context(source_id, data.model_dump())
+
+    @app.get('/api/sources/{source_id}/suggestions')
+    def source_suggestions(source_id: str, request: Request):
+        return suggestions(engines, store.source(source_id), request.state.language)
 
     @app.get('/api/sources/{source_id}/profile')
     def profile(source_id: str, request: Request):
